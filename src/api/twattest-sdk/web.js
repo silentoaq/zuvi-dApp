@@ -31,6 +31,9 @@ export class TwattestSDK {
     async checkPermissions(userDid) {
         return this.request(`/sdk/permissions/${userDid}`);
     }
+    async getAttestationStatus(userDid) {
+        return this.request(`/attestation/status/${userDid}`);
+    }
     async requestData(config) {
         return this.request('/sdk/data-request', {
             method: 'POST',

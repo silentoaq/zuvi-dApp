@@ -18,12 +18,38 @@ export interface DataRequestSession {
     vpRequestUri: string;
     expiresIn: number;
 }
+export interface TwfidoAttestation {
+    exists: boolean;
+    address: string;
+    data: {
+        merkleRoot: string;
+        credentialReference: string;
+    } | null;
+    expiry: number | null;
+}
+export interface TwlandAttestation {
+    exists: boolean;
+    attestations: Array<{
+        address: string;
+        data: {
+            merkleRoot: string;
+            credentialReference: string;
+        };
+        expiry: number;
+    }>;
+    count: number;
+}
+export interface AttestationStatus {
+    twfido?: TwfidoAttestation;
+    twland?: TwlandAttestation;
+}
 export declare class TwattestSDK {
     private baseUrl;
     private apiKey?;
     constructor(config?: TwattestSDKConfig);
     private request;
     checkPermissions(userDid: string): Promise<UserPermissions>;
+    getAttestationStatus(userDid: string): Promise<AttestationStatus>;
     requestData(config: DataRequestConfig): Promise<DataRequestSession>;
     generateQRCode(vpRequestUri: string): Promise<string>;
 }

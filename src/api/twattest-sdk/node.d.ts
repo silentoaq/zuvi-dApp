@@ -1,3 +1,4 @@
+import type { AttestationStatus, UserPermissions } from './web.js';
 export interface TwattestVerifierConfig {
     baseUrl?: string;
     apiSecret: string;
@@ -26,7 +27,7 @@ export declare class TwattestVerifier {
     private request;
     verifyVPToken(vpToken: string): Promise<VerificationResult>;
     extractCredentialData(vpToken: string, schema: DataSchema): Promise<ExtractedData>;
-    getAttestationStatus(holderDid: string): Promise<any>;
-    checkUserPermissions(holderDid: string): Promise<any>;
+    getAttestationStatus(holderDid: string): Promise<AttestationStatus>;
+    checkUserPermissions(holderDid: string): Promise<UserPermissions>;
 }
 //# sourceMappingURL=node.d.ts.map
