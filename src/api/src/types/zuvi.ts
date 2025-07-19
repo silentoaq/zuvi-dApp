@@ -577,6 +577,114 @@ export type Zuvi = {
       "args": []
     },
     {
+      "name": "reportDispute",
+      "docs": [
+        "提出爭議"
+      ],
+      "discriminator": [
+        229,
+        114,
+        46,
+        235,
+        151,
+        188,
+        5,
+        142
+      ],
+      "accounts": [
+        {
+          "name": "contract"
+        },
+        {
+          "name": "initiator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "disputeRecord",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  105,
+                  115,
+                  112,
+                  117,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "contract"
+              },
+              {
+                "kind": "account",
+                "path": "initiator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "reason",
+          "type": "string"
+        },
+        {
+          "name": "evidenceHash",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "respondToDispute",
+      "docs": [
+        "回應爭議"
+      ],
+      "discriminator": [
+        212,
+        2,
+        194,
+        244,
+        37,
+        73,
+        173,
+        201
+      ],
+      "accounts": [
+        {
+          "name": "disputeRecord",
+          "writable": true
+        },
+        {
+          "name": "respondent",
+          "signer": true
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "responseEvidenceHash",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "signContractAndPay",
       "docs": [
         "租客簽署合約並支付押金+首月租金"
@@ -630,8 +738,40 @@ export type Zuvi = {
           "writable": true
         },
         {
-          "name": "escrowAccount",
+          "name": "landlordUsdcAccount",
+          "writable": true
+        },
+        {
+          "name": "escrowTokenAccount",
           "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119,
+                  95,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "contract"
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrowPda",
           "pda": {
             "seeds": [
               {
@@ -651,6 +791,9 @@ export type Zuvi = {
               }
             ]
           }
+        },
+        {
+          "name": "usdcMint"
         },
         {
           "name": "platformUsdcAccount",
@@ -950,6 +1093,19 @@ export type Zuvi = {
     }
   ],
   "accounts": [
+    {
+      "name": "disputeRecord",
+      "discriminator": [
+        198,
+        199,
+        79,
+        209,
+        12,
+        215,
+        34,
+        47
+      ]
+    },
     {
       "name": "escrowAccount",
       "discriminator": [
@@ -1361,6 +1517,64 @@ export type Zuvi = {
           {
             "name": "timestamp",
             "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "disputeRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "disputeId",
+            "type": "pubkey"
+          },
+          {
+            "name": "contract",
+            "type": "pubkey"
+          },
+          {
+            "name": "initiatedBy",
+            "type": "pubkey"
+          },
+          {
+            "name": "respondent",
+            "type": "pubkey"
+          },
+          {
+            "name": "reason",
+            "type": "string"
+          },
+          {
+            "name": "evidenceHash",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "disputeStatus"
+              }
+            }
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          },
+          {
+            "name": "updatedAt",
+            "type": "i64"
+          },
+          {
+            "name": "resolutionNotes",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }

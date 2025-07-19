@@ -571,6 +571,114 @@
       "args": []
     },
     {
+      "name": "report_dispute",
+      "docs": [
+        "提出爭議"
+      ],
+      "discriminator": [
+        229,
+        114,
+        46,
+        235,
+        151,
+        188,
+        5,
+        142
+      ],
+      "accounts": [
+        {
+          "name": "contract"
+        },
+        {
+          "name": "initiator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "dispute_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  105,
+                  115,
+                  112,
+                  117,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "contract"
+              },
+              {
+                "kind": "account",
+                "path": "initiator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "reason",
+          "type": "string"
+        },
+        {
+          "name": "evidence_hash",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "respond_to_dispute",
+      "docs": [
+        "回應爭議"
+      ],
+      "discriminator": [
+        212,
+        2,
+        194,
+        244,
+        37,
+        73,
+        173,
+        201
+      ],
+      "accounts": [
+        {
+          "name": "dispute_record",
+          "writable": true
+        },
+        {
+          "name": "respondent",
+          "signer": true
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "response_evidence_hash",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "sign_contract_and_pay",
       "docs": [
         "租客簽署合約並支付押金+首月租金"
@@ -624,8 +732,40 @@
           "writable": true
         },
         {
-          "name": "escrow_account",
+          "name": "landlord_usdc_account",
+          "writable": true
+        },
+        {
+          "name": "escrow_token_account",
           "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119,
+                  95,
+                  116,
+                  111,
+                  107,
+                  101,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "contract"
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrow_pda",
           "pda": {
             "seeds": [
               {
@@ -645,6 +785,9 @@
               }
             ]
           }
+        },
+        {
+          "name": "usdc_mint"
         },
         {
           "name": "platform_usdc_account",
@@ -944,6 +1087,19 @@
     }
   ],
   "accounts": [
+    {
+      "name": "DisputeRecord",
+      "discriminator": [
+        198,
+        199,
+        79,
+        209,
+        12,
+        215,
+        34,
+        47
+      ]
+    },
     {
       "name": "EscrowAccount",
       "discriminator": [
@@ -1355,6 +1511,64 @@
           {
             "name": "timestamp",
             "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dispute_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "contract",
+            "type": "pubkey"
+          },
+          {
+            "name": "initiated_by",
+            "type": "pubkey"
+          },
+          {
+            "name": "respondent",
+            "type": "pubkey"
+          },
+          {
+            "name": "reason",
+            "type": "string"
+          },
+          {
+            "name": "evidence_hash",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "DisputeStatus"
+              }
+            }
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "resolution_notes",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }
