@@ -1044,6 +1044,32 @@ export type Zuvi = {
       ]
     },
     {
+      "name": "disputeRaised",
+      "discriminator": [
+        246,
+        167,
+        109,
+        37,
+        142,
+        45,
+        38,
+        176
+      ]
+    },
+    {
+      "name": "disputeResolved",
+      "discriminator": [
+        121,
+        64,
+        249,
+        153,
+        139,
+        128,
+        236,
+        187
+      ]
+    },
+    {
       "name": "propertyListed",
       "discriminator": [
         33,
@@ -1218,8 +1244,8 @@ export type Zuvi = {
     },
     {
       "code": 6029,
-      "name": "invalidUsdcMint",
-      "msg": "無效的 USDC mint"
+      "name": "invalidWithdrawAmount",
+      "msg": ""
     },
     {
       "code": 6030,
@@ -1228,16 +1254,23 @@ export type Zuvi = {
     },
     {
       "code": 6031,
-      "name": "invalidWithdrawAmount",
+      "name": "invalidDisputeStatus",
+      "msg": ""
+    },
+    {
+      "code": 6032,
+      "name": "disputeAlreadyExists",
+      "msg": ""
+    },
+    {
+      "code": 6033,
+      "name": "disputeNotFound",
       "msg": ""
     }
   ],
   "types": [
     {
       "name": "applicationStatus",
-      "docs": [
-        "申請狀態"
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -1286,9 +1319,6 @@ export type Zuvi = {
     },
     {
       "name": "contractStatus",
-      "docs": [
-        "合約狀態"
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -1308,39 +1338,96 @@ export type Zuvi = {
       }
     },
     {
+      "name": "disputeRaised",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "disputeId",
+            "type": "pubkey"
+          },
+          {
+            "name": "contract",
+            "type": "pubkey"
+          },
+          {
+            "name": "initiatedBy",
+            "type": "pubkey"
+          },
+          {
+            "name": "reason",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "disputeResolved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "disputeId",
+            "type": "pubkey"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "disputeStatus"
+              }
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "disputeStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "open"
+          },
+          {
+            "name": "underReview"
+          },
+          {
+            "name": "resolved"
+          },
+          {
+            "name": "withdrawn"
+          }
+        ]
+      }
+    },
+    {
       "name": "escrowAccount",
-      "docs": [
-        "託管賬戶資訊"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "contract",
-            "docs": [
-              "對應的合約"
-            ],
             "type": "pubkey"
           },
           {
             "name": "depositAmount",
-            "docs": [
-              "押金金額"
-            ],
             "type": "u64"
           },
           {
             "name": "depositRefunded",
-            "docs": [
-              "是否已退還押金"
-            ],
             "type": "bool"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1348,9 +1435,6 @@ export type Zuvi = {
     },
     {
       "name": "listingStatus",
-      "docs": [
-        "房源狀態"
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -1368,24 +1452,15 @@ export type Zuvi = {
     },
     {
       "name": "paymentRecord",
-      "docs": [
-        "支付記錄賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "contract",
-            "docs": [
-              "對應的合約"
-            ],
             "type": "pubkey"
           },
           {
             "name": "paymentType",
-            "docs": [
-              "支付類型"
-            ],
             "type": {
               "defined": {
                 "name": "paymentType"
@@ -1394,53 +1469,32 @@ export type Zuvi = {
           },
           {
             "name": "amount",
-            "docs": [
-              "金額"
-            ],
             "type": "u64"
           },
           {
             "name": "payer",
-            "docs": [
-              "支付者"
-            ],
             "type": "pubkey"
           },
           {
             "name": "receiver",
-            "docs": [
-              "接收者"
-            ],
             "type": "pubkey"
           },
           {
             "name": "paymentMonth",
-            "docs": [
-              "支付月份 (如果是月租)"
-            ],
             "type": {
               "option": "string"
             }
           },
           {
             "name": "paidAt",
-            "docs": [
-              "支付時間"
-            ],
             "type": "i64"
           },
           {
             "name": "transactionSignature",
-            "docs": [
-              "交易簽名"
-            ],
             "type": "string"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1448,9 +1502,6 @@ export type Zuvi = {
     },
     {
       "name": "paymentType",
-      "docs": [
-        "支付類型"
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -1471,66 +1522,43 @@ export type Zuvi = {
     },
     {
       "name": "platform",
-      "docs": [
-        "平台配置賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "authority",
-            "docs": [
-              "平台管理員"
-            ],
             "type": "pubkey"
           },
           {
             "name": "feeReceiver",
-            "docs": [
-              "費用接收者"
-            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "usdcMint",
             "type": "pubkey"
           },
           {
             "name": "listingFee",
-            "docs": [
-              "發布房源費用 (0.01 USDC)"
-            ],
             "type": "u64"
           },
           {
             "name": "contractFee",
-            "docs": [
-              "簽約費用 (0.05 USDC，雙方各付一半)"
-            ],
             "type": "u64"
           },
           {
             "name": "paymentFee",
-            "docs": [
-              "支付手續費 (0.005 USDC)"
-            ],
             "type": "u64"
           },
           {
-            "name": "usdcMint",
-            "docs": [
-              "USDC mint 地址"
-            ],
-            "type": "pubkey"
+            "name": "totalFeesCollected",
+            "type": "u64"
           },
           {
             "name": "isInitialized",
-            "docs": [
-              "平台是否已初始化"
-            ],
             "type": "bool"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1566,59 +1594,35 @@ export type Zuvi = {
     },
     {
       "name": "propertyListing",
-      "docs": [
-        "房源列表賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "propertyId",
-            "docs": [
-              "房產 ID (對應 twland 憑證)"
-            ],
             "type": "string"
           },
           {
             "name": "owner",
-            "docs": [
-              "房東地址"
-            ],
             "type": "pubkey"
           },
           {
             "name": "ownerAttestation",
-            "docs": [
-              "房東的 attestation 查詢結果"
-            ],
             "type": "string"
           },
           {
             "name": "monthlyRent",
-            "docs": [
-              "月租金 (USDC)"
-            ],
             "type": "u64"
           },
           {
             "name": "depositMonths",
-            "docs": [
-              "押金月數"
-            ],
             "type": "u8"
           },
           {
             "name": "propertyDetailsHash",
-            "docs": [
-              "房產詳細資料 IPFS hash"
-            ],
             "type": "string"
           },
           {
             "name": "status",
-            "docs": [
-              "房源狀態"
-            ],
             "type": {
               "defined": {
                 "name": "listingStatus"
@@ -1627,34 +1631,22 @@ export type Zuvi = {
           },
           {
             "name": "currentTenant",
-            "docs": [
-              "當前租客 (如果已出租)"
-            ],
             "type": {
               "option": "pubkey"
             }
           },
           {
             "name": "currentContract",
-            "docs": [
-              "當前合約 (如果已出租)"
-            ],
             "type": {
               "option": "pubkey"
             }
           },
           {
             "name": "createdAt",
-            "docs": [
-              "創建時間"
-            ],
             "type": "i64"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1690,45 +1682,27 @@ export type Zuvi = {
     },
     {
       "name": "rentalApplication",
-      "docs": [
-        "租賃申請賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "listing",
-            "docs": [
-              "對應的房源"
-            ],
             "type": "pubkey"
           },
           {
             "name": "applicant",
-            "docs": [
-              "申請人地址"
-            ],
             "type": "pubkey"
           },
           {
             "name": "applicantAttestation",
-            "docs": [
-              "申請人的 attestation 查詢結果"
-            ],
             "type": "string"
           },
           {
             "name": "proposedTerms",
-            "docs": [
-              "提議的條款 (JSON string)"
-            ],
             "type": "string"
           },
           {
             "name": "status",
-            "docs": [
-              "申請狀態"
-            ],
             "type": {
               "defined": {
                 "name": "applicationStatus"
@@ -1737,23 +1711,14 @@ export type Zuvi = {
           },
           {
             "name": "createdAt",
-            "docs": [
-              "創建時間"
-            ],
             "type": "i64"
           },
           {
             "name": "updatedAt",
-            "docs": [
-              "更新時間"
-            ],
             "type": "i64"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1761,87 +1726,51 @@ export type Zuvi = {
     },
     {
       "name": "rentalContract",
-      "docs": [
-        "租賃合約賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "listing",
-            "docs": [
-              "對應的房源"
-            ],
             "type": "pubkey"
           },
           {
             "name": "landlord",
-            "docs": [
-              "房東地址"
-            ],
             "type": "pubkey"
           },
           {
             "name": "tenant",
-            "docs": [
-              "租客地址"
-            ],
             "type": "pubkey"
           },
           {
             "name": "monthlyRent",
-            "docs": [
-              "月租金"
-            ],
             "type": "u64"
           },
           {
             "name": "depositAmount",
-            "docs": [
-              "押金金額"
-            ],
             "type": "u64"
           },
           {
             "name": "startDate",
-            "docs": [
-              "租約開始日期"
-            ],
             "type": "i64"
           },
           {
             "name": "endDate",
-            "docs": [
-              "租約結束日期"
-            ],
             "type": "i64"
           },
           {
             "name": "paymentDay",
-            "docs": [
-              "每月付款日 (1-28)"
-            ],
             "type": "u8"
           },
           {
             "name": "contractHash",
-            "docs": [
-              "合約文件 IPFS hash"
-            ],
             "type": "string"
           },
           {
             "name": "escrowAccount",
-            "docs": [
-              "託管賬戶 (PDA)"
-            ],
             "type": "pubkey"
           },
           {
             "name": "status",
-            "docs": [
-              "合約狀態"
-            ],
             "type": {
               "defined": {
                 "name": "contractStatus"
@@ -1850,23 +1779,14 @@ export type Zuvi = {
           },
           {
             "name": "paidMonths",
-            "docs": [
-              "已支付月數"
-            ],
             "type": "u16"
           },
           {
             "name": "createdAt",
-            "docs": [
-              "創建時間"
-            ],
             "type": "i64"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]

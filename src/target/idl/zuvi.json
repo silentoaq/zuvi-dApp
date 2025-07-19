@@ -1038,6 +1038,32 @@
       ]
     },
     {
+      "name": "DisputeRaised",
+      "discriminator": [
+        246,
+        167,
+        109,
+        37,
+        142,
+        45,
+        38,
+        176
+      ]
+    },
+    {
+      "name": "DisputeResolved",
+      "discriminator": [
+        121,
+        64,
+        249,
+        153,
+        139,
+        128,
+        236,
+        187
+      ]
+    },
+    {
       "name": "PropertyListed",
       "discriminator": [
         33,
@@ -1208,12 +1234,12 @@
     {
       "code": 6028,
       "name": "InsufficientBalance",
-      "msg": "賬戶餘額不足"
+      "msg": "餘額不足"
     },
     {
       "code": 6029,
-      "name": "InvalidUsdcMint",
-      "msg": "無效的 USDC mint"
+      "name": "InvalidWithdrawAmount",
+      "msg": "無效的提取金額"
     },
     {
       "code": 6030,
@@ -1222,16 +1248,23 @@
     },
     {
       "code": 6031,
-      "name": "InvalidWithdrawAmount",
-      "msg": "無效的提款金額"
+      "name": "InvalidDisputeStatus",
+      "msg": "爭議狀態不正確"
+    },
+    {
+      "code": 6032,
+      "name": "DisputeAlreadyExists",
+      "msg": "爭議已存在"
+    },
+    {
+      "code": 6033,
+      "name": "DisputeNotFound",
+      "msg": "爭議不存在"
     }
   ],
   "types": [
     {
       "name": "ApplicationStatus",
-      "docs": [
-        "申請狀態"
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -1280,9 +1313,6 @@
     },
     {
       "name": "ContractStatus",
-      "docs": [
-        "合約狀態"
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -1302,39 +1332,96 @@
       }
     },
     {
+      "name": "DisputeRaised",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dispute_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "contract",
+            "type": "pubkey"
+          },
+          {
+            "name": "initiated_by",
+            "type": "pubkey"
+          },
+          {
+            "name": "reason",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeResolved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dispute_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "DisputeStatus"
+              }
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Open"
+          },
+          {
+            "name": "UnderReview"
+          },
+          {
+            "name": "Resolved"
+          },
+          {
+            "name": "Withdrawn"
+          }
+        ]
+      }
+    },
+    {
       "name": "EscrowAccount",
-      "docs": [
-        "託管賬戶資訊"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "contract",
-            "docs": [
-              "對應的合約"
-            ],
             "type": "pubkey"
           },
           {
             "name": "deposit_amount",
-            "docs": [
-              "押金金額"
-            ],
             "type": "u64"
           },
           {
             "name": "deposit_refunded",
-            "docs": [
-              "是否已退還押金"
-            ],
             "type": "bool"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1342,9 +1429,6 @@
     },
     {
       "name": "ListingStatus",
-      "docs": [
-        "房源狀態"
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -1362,24 +1446,15 @@
     },
     {
       "name": "PaymentRecord",
-      "docs": [
-        "支付記錄賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "contract",
-            "docs": [
-              "對應的合約"
-            ],
             "type": "pubkey"
           },
           {
             "name": "payment_type",
-            "docs": [
-              "支付類型"
-            ],
             "type": {
               "defined": {
                 "name": "PaymentType"
@@ -1388,53 +1463,32 @@
           },
           {
             "name": "amount",
-            "docs": [
-              "金額"
-            ],
             "type": "u64"
           },
           {
             "name": "payer",
-            "docs": [
-              "支付者"
-            ],
             "type": "pubkey"
           },
           {
             "name": "receiver",
-            "docs": [
-              "接收者"
-            ],
             "type": "pubkey"
           },
           {
             "name": "payment_month",
-            "docs": [
-              "支付月份 (如果是月租)"
-            ],
             "type": {
               "option": "string"
             }
           },
           {
             "name": "paid_at",
-            "docs": [
-              "支付時間"
-            ],
             "type": "i64"
           },
           {
             "name": "transaction_signature",
-            "docs": [
-              "交易簽名"
-            ],
             "type": "string"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1442,9 +1496,6 @@
     },
     {
       "name": "PaymentType",
-      "docs": [
-        "支付類型"
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -1465,66 +1516,43 @@
     },
     {
       "name": "Platform",
-      "docs": [
-        "平台配置賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "authority",
-            "docs": [
-              "平台管理員"
-            ],
             "type": "pubkey"
           },
           {
             "name": "fee_receiver",
-            "docs": [
-              "費用接收者"
-            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "usdc_mint",
             "type": "pubkey"
           },
           {
             "name": "listing_fee",
-            "docs": [
-              "發布房源費用 (0.01 USDC)"
-            ],
             "type": "u64"
           },
           {
             "name": "contract_fee",
-            "docs": [
-              "簽約費用 (0.05 USDC，雙方各付一半)"
-            ],
             "type": "u64"
           },
           {
             "name": "payment_fee",
-            "docs": [
-              "支付手續費 (0.005 USDC)"
-            ],
             "type": "u64"
           },
           {
-            "name": "usdc_mint",
-            "docs": [
-              "USDC mint 地址"
-            ],
-            "type": "pubkey"
+            "name": "total_fees_collected",
+            "type": "u64"
           },
           {
             "name": "is_initialized",
-            "docs": [
-              "平台是否已初始化"
-            ],
             "type": "bool"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1560,59 +1588,35 @@
     },
     {
       "name": "PropertyListing",
-      "docs": [
-        "房源列表賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "property_id",
-            "docs": [
-              "房產 ID (對應 twland 憑證)"
-            ],
             "type": "string"
           },
           {
             "name": "owner",
-            "docs": [
-              "房東地址"
-            ],
             "type": "pubkey"
           },
           {
             "name": "owner_attestation",
-            "docs": [
-              "房東的 attestation 查詢結果"
-            ],
             "type": "string"
           },
           {
             "name": "monthly_rent",
-            "docs": [
-              "月租金 (USDC)"
-            ],
             "type": "u64"
           },
           {
             "name": "deposit_months",
-            "docs": [
-              "押金月數"
-            ],
             "type": "u8"
           },
           {
             "name": "property_details_hash",
-            "docs": [
-              "房產詳細資料 IPFS hash"
-            ],
             "type": "string"
           },
           {
             "name": "status",
-            "docs": [
-              "房源狀態"
-            ],
             "type": {
               "defined": {
                 "name": "ListingStatus"
@@ -1621,34 +1625,22 @@
           },
           {
             "name": "current_tenant",
-            "docs": [
-              "當前租客 (如果已出租)"
-            ],
             "type": {
               "option": "pubkey"
             }
           },
           {
             "name": "current_contract",
-            "docs": [
-              "當前合約 (如果已出租)"
-            ],
             "type": {
               "option": "pubkey"
             }
           },
           {
             "name": "created_at",
-            "docs": [
-              "創建時間"
-            ],
             "type": "i64"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1684,45 +1676,27 @@
     },
     {
       "name": "RentalApplication",
-      "docs": [
-        "租賃申請賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "listing",
-            "docs": [
-              "對應的房源"
-            ],
             "type": "pubkey"
           },
           {
             "name": "applicant",
-            "docs": [
-              "申請人地址"
-            ],
             "type": "pubkey"
           },
           {
             "name": "applicant_attestation",
-            "docs": [
-              "申請人的 attestation 查詢結果"
-            ],
             "type": "string"
           },
           {
             "name": "proposed_terms",
-            "docs": [
-              "提議的條款 (JSON string)"
-            ],
             "type": "string"
           },
           {
             "name": "status",
-            "docs": [
-              "申請狀態"
-            ],
             "type": {
               "defined": {
                 "name": "ApplicationStatus"
@@ -1731,23 +1705,14 @@
           },
           {
             "name": "created_at",
-            "docs": [
-              "創建時間"
-            ],
             "type": "i64"
           },
           {
             "name": "updated_at",
-            "docs": [
-              "更新時間"
-            ],
             "type": "i64"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
@@ -1755,87 +1720,51 @@
     },
     {
       "name": "RentalContract",
-      "docs": [
-        "租賃合約賬戶"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "listing",
-            "docs": [
-              "對應的房源"
-            ],
             "type": "pubkey"
           },
           {
             "name": "landlord",
-            "docs": [
-              "房東地址"
-            ],
             "type": "pubkey"
           },
           {
             "name": "tenant",
-            "docs": [
-              "租客地址"
-            ],
             "type": "pubkey"
           },
           {
             "name": "monthly_rent",
-            "docs": [
-              "月租金"
-            ],
             "type": "u64"
           },
           {
             "name": "deposit_amount",
-            "docs": [
-              "押金金額"
-            ],
             "type": "u64"
           },
           {
             "name": "start_date",
-            "docs": [
-              "租約開始日期"
-            ],
             "type": "i64"
           },
           {
             "name": "end_date",
-            "docs": [
-              "租約結束日期"
-            ],
             "type": "i64"
           },
           {
             "name": "payment_day",
-            "docs": [
-              "每月付款日 (1-28)"
-            ],
             "type": "u8"
           },
           {
             "name": "contract_hash",
-            "docs": [
-              "合約文件 IPFS hash"
-            ],
             "type": "string"
           },
           {
             "name": "escrow_account",
-            "docs": [
-              "託管賬戶 (PDA)"
-            ],
             "type": "pubkey"
           },
           {
             "name": "status",
-            "docs": [
-              "合約狀態"
-            ],
             "type": {
               "defined": {
                 "name": "ContractStatus"
@@ -1844,23 +1773,14 @@
           },
           {
             "name": "paid_months",
-            "docs": [
-              "已支付月數"
-            ],
             "type": "u16"
           },
           {
             "name": "created_at",
-            "docs": [
-              "創建時間"
-            ],
             "type": "i64"
           },
           {
             "name": "bump",
-            "docs": [
-              "bump seed"
-            ],
             "type": "u8"
           }
         ]
