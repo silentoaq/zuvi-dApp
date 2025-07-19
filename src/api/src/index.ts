@@ -6,18 +6,19 @@ const envPath = path.resolve(process.cwd(), '.env');
 
 const result = dotenv.config({ path: envPath });
 if (result.error) {
-  console.error('Environment variables loading failed:', result.error);
+  console.error('環境變數載入失敗:', result.error);
   process.exit(1);
 }
 
 if (!existsSync(envPath)) {
-  console.error('.env file not found');
+  console.error('.env 檔案不存在');
   process.exit(1);
 }
 
 import express from 'express';
 import cors from 'cors';
 import { authRoutes } from './routes/auth.js';
+import { platformRoutes } from './routes/platform.js';
 import { listingsRoutes } from './routes/listings.js';
 import { applicationsRoutes } from './routes/applications.js';
 import { contractsRoutes } from './routes/contracts.js';
@@ -27,17 +28,21 @@ import { transactionRoutes } from './routes/transactions.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// 中介軟體
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// 路由
 app.use('/api/auth', authRoutes);
+app.use('/api/platform', platformRoutes);
 app.use('/api/listings', listingsRoutes);
 app.use('/api/applications', applicationsRoutes);
 app.use('/api/contracts', contractsRoutes);
 app.use('/api/ipfs', ipfsRoutes);
 app.use('/api/transactions', transactionRoutes);
 
+// 健康檢查
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
@@ -46,12 +51,14 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API 資訊
 app.get('/api', (req, res) => {
   res.json({
     message: 'Zuvi API Server',
     version: '1.0.0',
     routes: {
       auth: '/api/auth',
+      platform: '/api/platform',
       listings: '/api/listings',
       applications: '/api/applications',
       contracts: '/api/contracts',
@@ -61,6 +68,7 @@ app.get('/api', (req, res) => {
   });
 });
 
+// 錯誤處理
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('API 錯誤:', err);
   res.status(500).json({
@@ -69,6 +77,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
+// 404 處理
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,

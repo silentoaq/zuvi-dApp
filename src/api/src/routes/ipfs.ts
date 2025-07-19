@@ -1,17 +1,16 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { ipfsService } from '../services/ipfs';
+import { ipfsService } from '../services/ipfs.js';
 
 const router = Router();
 
-// 設置 multer 用於檔案上傳
+// multer 設定
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
   },
   fileFilter: (req, file, cb) => {
-    // 允許的檔案類型
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
@@ -85,7 +84,6 @@ router.post('/upload-multiple', upload.array('files', 10), async (req, res) => {
 router.get('/file/:hash', async (req, res) => {
   try {
     const { hash } = req.params;
-    
     const url = ipfsService.getFileUrl(hash);
     
     res.json({
@@ -108,7 +106,6 @@ router.get('/file/:hash', async (req, res) => {
 router.get('/data/:hash', async (req, res) => {
   try {
     const { hash } = req.params;
-    
     const data = await ipfsService.getData(hash);
     
     res.json({
