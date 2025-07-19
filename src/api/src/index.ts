@@ -22,6 +22,7 @@ import { platformRoutes } from './routes/platform.js';
 import { listingsRoutes } from './routes/listings.js';
 import { applicationsRoutes } from './routes/applications.js';
 import { contractsRoutes } from './routes/contracts.js';
+import { disputesRoutes } from './routes/disputes.js';
 import { ipfsRoutes } from './routes/ipfs.js';
 import { transactionRoutes } from './routes/transactions.js';
 
@@ -39,6 +40,7 @@ app.use('/api/platform', platformRoutes);
 app.use('/api/listings', listingsRoutes);
 app.use('/api/applications', applicationsRoutes);
 app.use('/api/contracts', contractsRoutes);
+app.use('/api/disputes', disputesRoutes);
 app.use('/api/ipfs', ipfsRoutes);
 app.use('/api/transactions', transactionRoutes);
 
@@ -62,6 +64,7 @@ app.get('/api', (req, res) => {
       listings: '/api/listings',
       applications: '/api/applications',
       contracts: '/api/contracts',
+      disputes: '/api/disputes',
       ipfs: '/api/ipfs',
       transactions: '/api/transactions'
     }
