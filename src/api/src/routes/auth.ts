@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { PublicKey } from '@solana/web3.js';
-import { TwattestSDK } from '../../twattest-sdk';
+import { TwattestVerifier } from '../../twattest-sdk/node.js';
 
 const router = Router();
-const twattestSDK = new TwattestSDK({
-  baseUrl: 'https://twattest.ddns.net/api'
+const twattestVerifier = new TwattestVerifier({
+  baseUrl: 'https://twattest.ddns.net/api',
+  apiSecret: process.env.TWATTEST_API_SECRET || 'your-api-secret'
 });
 
 // 檢查用戶權限
@@ -19,7 +20,7 @@ router.get('/permissions/:userDid', async (req, res) => {
       return res.status(400).json({ error: '無效的用戶 DID' });
     }
 
-    const permissions = await twattestSDK.checkPermissions(userDid);
+    const permissions = await twattestVerifier.checkUserPermissions(userDid);
     
     res.json({
       success: true,
@@ -78,7 +79,7 @@ router.post('/verify', async (req, res) => {
 
     // 這裡可以加入簽名驗證邏輯
     // 簡化版本直接檢查權限
-    const permissions = await twattestSDK.checkPermissions(userDid);
+    const permissions = await twattestVerifier.checkUserPermissions(userDid);
     
     res.json({
       success: true,

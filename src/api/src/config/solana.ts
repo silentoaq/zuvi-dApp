@@ -1,6 +1,7 @@
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
 import { Zuvi } from '../types/zuvi';
+import idl from '../../..//target/idl/zuvi.json';
 
 // Solana 配置
 export const SOLANA_NETWORK = process.env.SOLANA_NETWORK || 'devnet';
@@ -21,9 +22,7 @@ export const getZuviProgram = (wallet: Wallet): Program<Zuvi> => {
     commitment: 'confirmed',
   });
   
-  // 這裡會用到 zuvi.json IDL
-  const idl = require('../../../types/zuvi.json');
-  return new Program<Zuvi>(idl, ZUVI_PROGRAM_ID, provider);
+  return new Program<Zuvi>(idl as any, provider);
 };
 
 // 平台 PDA
