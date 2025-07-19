@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import { PublicKey, Transaction } from '@solana/web3.js';
-import { solanaService } from '../services/solana';
+import { getSolanaService } from '../services/solana.js';
 
 const router = Router();
 
-// 代付執行交易
 router.post('/execute', async (req, res) => {
   try {
     const { transactionData, userWallet } = req.body;
@@ -13,11 +12,10 @@ router.post('/execute', async (req, res) => {
       return res.status(400).json({ error: '缺少交易資料或用戶錢包' });
     }
 
-    // 反序列化交易
     const transaction = Transaction.from(Buffer.from(transactionData, 'base64'));
     const userWalletPubkey = new PublicKey(userWallet);
 
-    // 執行交易（由後端代付 SOL 手續費）
+    const solanaService = getSolanaService();
     const signature = await solanaService.executeTransaction(transaction, userWalletPubkey);
 
     res.json({
@@ -36,12 +34,11 @@ router.post('/execute', async (req, res) => {
   }
 });
 
-// 查詢交易狀態
 router.get('/status/:signature', async (req, res) => {
   try {
     const { signature } = req.params;
 
-    // 查詢交易狀態
+    const solanaService = getSolanaService();
     const status = await solanaService.connection.getSignatureStatus(signature);
 
     res.json({
@@ -61,9 +58,9 @@ router.get('/status/:signature', async (req, res) => {
   }
 });
 
-// 取得最新區塊雜湊
 router.get('/latest-blockhash', async (req, res) => {
   try {
+    const solanaService = getSolanaService();
     const { blockhash, lastValidBlockHeight } = await solanaService.connection.getLatestBlockhash();
 
     res.json({
@@ -82,7 +79,6 @@ router.get('/latest-blockhash', async (req, res) => {
   }
 });
 
-// 估算交易費用
 router.post('/estimate-fee', async (req, res) => {
   try {
     const { transactionData } = req.body;
@@ -91,10 +87,9 @@ router.post('/estimate-fee', async (req, res) => {
       return res.status(400).json({ error: '缺少交易資料' });
     }
 
-    // 反序列化交易
     const transaction = Transaction.from(Buffer.from(transactionData, 'base64'));
     
-    // 估算費用
+    const solanaService = getSolanaService();
     const fee = await solanaService.connection.getFeeForMessage(
       transaction.compileMessage(),
       'confirmed'
@@ -104,7 +99,7 @@ router.post('/estimate-fee', async (req, res) => {
       success: true,
       data: {
         fee: fee.value || 0,
-        feePaidBy: 'server' // 標示由伺服器代付
+        feePaidBy: 'server'
       }
     });
   } catch (error) {

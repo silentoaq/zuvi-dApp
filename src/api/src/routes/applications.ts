@@ -1,18 +1,17 @@
 import { Router } from 'express';
 import { PublicKey } from '@solana/web3.js';
-import { solanaService } from '../services/solana';
+import { getSolanaService } from '../services/solana.js';
 
 const router = Router();
 
-// 取得用戶的所有申請
 router.get('/user/:userDid', async (req, res) => {
   try {
     const { userDid } = req.params;
     
     const userPubkey = new PublicKey(userDid);
+    const solanaService = getSolanaService();
     const applications = await solanaService.getUserApplications(userPubkey);
 
-    // 取得每個申請對應的房源資料
     const applicationsWithListings = await Promise.all(
       applications.map(async (app) => {
         try {
@@ -48,7 +47,6 @@ router.get('/user/:userDid', async (req, res) => {
   }
 });
 
-// 準備提交租房申請
 router.post('/prepare', async (req, res) => {
   try {
     const {
@@ -62,6 +60,7 @@ router.post('/prepare', async (req, res) => {
       return res.status(400).json({ error: '缺少必要欄位' });
     }
 
+    const solanaService = getSolanaService();
     const [listingPDA] = solanaService.getListingPDA(propertyId);
     const applicantPubkey = new PublicKey(applicantDid);
     const [applicationPDA] = solanaService.getApplicationPDA(listingPDA, applicantPubkey);
@@ -86,7 +85,6 @@ router.post('/prepare', async (req, res) => {
   }
 });
 
-// 準備接受申請
 router.post('/:applicationId/accept/prepare', async (req, res) => {
   try {
     const { applicationId } = req.params;
@@ -97,6 +95,7 @@ router.post('/:applicationId/accept/prepare', async (req, res) => {
     }
 
     const applicationPubkey = new PublicKey(applicationId);
+    const solanaService = getSolanaService();
     const applicationData = await solanaService.getAccountData(applicationPubkey);
     
     if (!applicationData) {
@@ -120,7 +119,6 @@ router.post('/:applicationId/accept/prepare', async (req, res) => {
   }
 });
 
-// 準備拒絕申請
 router.post('/:applicationId/reject/prepare', async (req, res) => {
   try {
     const { applicationId } = req.params;
@@ -131,6 +129,7 @@ router.post('/:applicationId/reject/prepare', async (req, res) => {
     }
 
     const applicationPubkey = new PublicKey(applicationId);
+    const solanaService = getSolanaService();
     const applicationData = await solanaService.getAccountData(applicationPubkey);
     
     if (!applicationData) {
@@ -154,15 +153,13 @@ router.post('/:applicationId/reject/prepare', async (req, res) => {
   }
 });
 
-// 取得房源的所有申請（房東用）
 router.get('/listing/:propertyId', async (req, res) => {
   try {
     const { propertyId } = req.params;
     
+    const solanaService = getSolanaService();
     const [listingPDA] = solanaService.getListingPDA(propertyId);
     
-    // 簡化實現：返回空陣列
-    // 完整實現需要掃描所有申請帳戶
     res.json({
       success: true,
       data: []

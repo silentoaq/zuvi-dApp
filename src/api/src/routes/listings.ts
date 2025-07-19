@@ -1,23 +1,21 @@
 import { Router } from 'express';
 import { PublicKey } from '@solana/web3.js';
-import { solanaService } from '../services/solana';
-import { ipfsService, PropertyDetailsData } from '../services/ipfs';
+import { getSolanaService } from '../services/solana.js';
+import { ipfsService, PropertyDetailsData } from '../services/ipfs.js';
 
 const router = Router();
 
-// 取得所有房源
 router.get('/', async (req, res) => {
   try {
     const { status } = req.query;
     
+    const solanaService = getSolanaService();
     const listings = await solanaService.getAllListings();
     
-    // 過濾狀態
     const filteredListings = status ? 
       listings.filter(listing => listing.status.hasOwnProperty(status.toString().toLowerCase())) :
       listings;
 
-    // 從 IPFS 取得詳細資料
     const listingsWithDetails = await Promise.all(
       filteredListings.map(async (listing) => {
         let propertyDetails = null;
@@ -51,11 +49,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 取得單一房源
 router.get('/:propertyId', async (req, res) => {
   try {
     const { propertyId } = req.params;
     
+    const solanaService = getSolanaService();
     const [listingPDA] = solanaService.getListingPDA(propertyId);
     const listingData = await solanaService.getAccountData(listingPDA);
     
@@ -66,7 +64,6 @@ router.get('/:propertyId', async (req, res) => {
       });
     }
 
-    // 從 IPFS 取得詳細資料
     let propertyDetails = null;
     if (listingData.propertyDetailsHash) {
       try {
@@ -95,7 +92,6 @@ router.get('/:propertyId', async (req, res) => {
   }
 });
 
-// 準備發布房源交易
 router.post('/prepare', async (req, res) => {
   try {
     const {
@@ -111,10 +107,9 @@ router.post('/prepare', async (req, res) => {
       return res.status(400).json({ error: '缺少必要欄位' });
     }
 
-    // 上傳房源詳細資料到 IPFS
     const propertyDetailsHash = await ipfsService.uploadPropertyDetails(propertyDetails as PropertyDetailsData);
 
-    // 準備交易資料
+    const solanaService = getSolanaService();
     const [listingPDA] = solanaService.getListingPDA(propertyId);
     const [platformPDA] = solanaService.getPlatformPDA();
     
@@ -142,7 +137,6 @@ router.post('/prepare', async (req, res) => {
   }
 });
 
-// 下架房源
 router.post('/:propertyId/delist', async (req, res) => {
   try {
     const { propertyId } = req.params;
@@ -152,6 +146,7 @@ router.post('/:propertyId/delist', async (req, res) => {
       return res.status(400).json({ error: '缺少擁有者 DID' });
     }
 
+    const solanaService = getSolanaService();
     const [listingPDA] = solanaService.getListingPDA(propertyId);
     
     res.json({
@@ -172,16 +167,13 @@ router.post('/:propertyId/delist', async (req, res) => {
   }
 });
 
-// 取得房源的申請列表
 router.get('/:propertyId/applications', async (req, res) => {
   try {
     const { propertyId } = req.params;
     
+    const solanaService = getSolanaService();
     const [listingPDA] = solanaService.getListingPDA(propertyId);
-    const accounts = await solanaService.getAllListings();
     
-    // 這裡需要從智能合約取得申請資料
-    // 由於時間考量，先返回空陣列
     res.json({
       success: true,
       data: []

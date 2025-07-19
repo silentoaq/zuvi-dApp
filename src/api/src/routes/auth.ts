@@ -8,12 +8,10 @@ const twattestVerifier = new TwattestVerifier({
   apiSecret: process.env.TWATTEST_API_SECRET || 'your-api-secret'
 });
 
-// 檢查用戶權限
 router.get('/permissions/:userDid', async (req, res) => {
   try {
     const { userDid } = req.params;
     
-    // 驗證 DID 格式 (should be Solana address)
     try {
       new PublicKey(userDid);
     } catch {
@@ -41,12 +39,10 @@ router.get('/permissions/:userDid', async (req, res) => {
   }
 });
 
-// 取得用戶詳細 attestation 狀態
 router.get('/attestation/:userDid', async (req, res) => {
   try {
     const { userDid } = req.params;
     
-    // 直接調用 twattest API 取得 attestation 狀態
     const response = await fetch(`${process.env.TWATTEST_API_URL}/attestation/status/${userDid}`);
     
     if (!response.ok) {
@@ -68,7 +64,6 @@ router.get('/attestation/:userDid', async (req, res) => {
   }
 });
 
-// 驗證用戶身份
 router.post('/verify', async (req, res) => {
   try {
     const { userDid, signature } = req.body;
@@ -77,8 +72,6 @@ router.post('/verify', async (req, res) => {
       return res.status(400).json({ error: '缺少必要參數' });
     }
 
-    // 這裡可以加入簽名驗證邏輯
-    // 簡化版本直接檢查權限
     const permissions = await twattestVerifier.checkUserPermissions(userDid);
     
     res.json({

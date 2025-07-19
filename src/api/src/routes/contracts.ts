@@ -1,19 +1,18 @@
 import { Router } from 'express';
 import { PublicKey } from '@solana/web3.js';
-import { solanaService } from '../services/solana';
-import { ipfsService, ContractDocumentData } from '../services/ipfs';
+import { getSolanaService } from '../services/solana.js';
+import { ipfsService, ContractDocumentData } from '../services/ipfs.js';
 
 const router = Router();
 
-// 取得用戶的所有合約
 router.get('/user/:userDid', async (req, res) => {
   try {
     const { userDid } = req.params;
     const userPubkey = new PublicKey(userDid);
     
+    const solanaService = getSolanaService();
     const contracts = await solanaService.getUserContracts(userPubkey);
 
-    // 取得合約文件詳細資料
     const contractsWithDetails = await Promise.all(
       contracts.map(async (contract) => {
         let contractDocument = null;
@@ -50,12 +49,12 @@ router.get('/user/:userDid', async (req, res) => {
   }
 });
 
-// 取得單一合約
 router.get('/:contractId', async (req, res) => {
   try {
     const { contractId } = req.params;
     const contractPubkey = new PublicKey(contractId);
     
+    const solanaService = getSolanaService();
     const contractData = await solanaService.getAccountData(contractPubkey);
     if (!contractData) {
       return res.status(404).json({ 
@@ -64,7 +63,6 @@ router.get('/:contractId', async (req, res) => {
       });
     }
 
-    // 從 IPFS 取得合約文件
     let contractDocument = null;
     if (contractData.contractHash) {
       try {
@@ -96,7 +94,6 @@ router.get('/:contractId', async (req, res) => {
   }
 });
 
-// 準備創建合約
 router.post('/prepare', async (req, res) => {
   try {
     const {
@@ -118,7 +115,6 @@ router.post('/prepare', async (req, res) => {
       return res.status(400).json({ error: '缺少必要欄位' });
     }
 
-    // 準備合約文件資料
     const contractDocument: ContractDocumentData = {
       templateVersion: '1.0',
       landlordDid,
@@ -133,12 +129,11 @@ router.post('/prepare', async (req, res) => {
       timestamp: Date.now()
     };
 
-    // 上傳合約文件到 IPFS
     const contractHash = await ipfsService.uploadContractDocument(contractDocument);
 
-    // 計算 PDA
     const listingPubkey = new PublicKey(listingId);
     const tenantPubkey = new PublicKey(tenantDid);
+    const solanaService = getSolanaService();
     const [contractPDA] = solanaService.getContractPDA(listingPubkey, tenantPubkey);
     const escrowPDA = PublicKey.findProgramAddressSync(
       [Buffer.from('escrow'), contractPDA.toBuffer()],
@@ -168,7 +163,6 @@ router.post('/prepare', async (req, res) => {
   }
 });
 
-// 準備簽署合約並支付
 router.post('/:contractId/sign-and-pay/prepare', async (req, res) => {
   try {
     const { contractId } = req.params;
@@ -179,6 +173,7 @@ router.post('/:contractId/sign-and-pay/prepare', async (req, res) => {
     }
 
     const contractPubkey = new PublicKey(contractId);
+    const solanaService = getSolanaService();
     const contractData = await solanaService.getAccountData(contractPubkey);
 
     if (!contractData) {
@@ -208,7 +203,6 @@ router.post('/:contractId/sign-and-pay/prepare', async (req, res) => {
   }
 });
 
-// 準備支付月租
 router.post('/:contractId/pay-rent/prepare', async (req, res) => {
   try {
     const { contractId } = req.params;
@@ -219,6 +213,7 @@ router.post('/:contractId/pay-rent/prepare', async (req, res) => {
     }
 
     const contractPubkey = new PublicKey(contractId);
+    const solanaService = getSolanaService();
     const contractData = await solanaService.getAccountData(contractPubkey);
 
     if (!contractData) {
@@ -247,7 +242,6 @@ router.post('/:contractId/pay-rent/prepare', async (req, res) => {
   }
 });
 
-// 準備終止合約
 router.post('/:contractId/terminate/prepare', async (req, res) => {
   try {
     const { contractId } = req.params;
@@ -258,6 +252,7 @@ router.post('/:contractId/terminate/prepare', async (req, res) => {
     }
 
     const contractPubkey = new PublicKey(contractId);
+    const solanaService = getSolanaService();
     const contractData = await solanaService.getAccountData(contractPubkey);
 
     if (!contractData) {
