@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PublicKey } from '@solana/web3.js';
-import { connection, ZUVI_PROGRAM_ID } from '../config/solana';
+import { solanaService } from '../services/solana';
 import { ipfsService, ContractDocumentData } from '../services/ipfs';
 
 const router = Router();
@@ -11,51 +11,35 @@ router.get('/user/:userDid', async (req, res) => {
     const { userDid } = req.params;
     const userPubkey = new PublicKey(userDid);
     
-    // 取得所有合約帳戶
-    const accounts = await connection.getProgramAccounts(ZUVI_PROGRAM_ID, {
-      filters: [
-        {
-          memcmp: {
-            offset: 0,
-            bytes: 'LXQJBpEipH0' // RentalContract discriminator
+    const contracts = await solanaService.getUserContracts(userPubkey);
+
+    // 取得合約文件詳細資料
+    const contractsWithDetails = await Promise.all(
+      contracts.map(async (contract) => {
+        let contractDocument = null;
+        if (contract.contractHash) {
+          try {
+            contractDocument = await ipfsService.getData(contract.contractHash);
+          } catch (error) {
+            console.warn('無法取得合約文件:', contract.contractHash);
           }
         }
-      ]
-    });
 
-    const contracts = [];
-    
-    for (const account of accounts) {
-      try {
-        const contractData = JSON.parse(account.account.data.toString());
-        
-        // 檢查用戶是否是房東或租客
-        if (contractData.landlord === userDid || contractData.tenant === userDid) {
-          // 從 IPFS 取得合約文件
-          let contractDocument = null;
-          if (contractData.contractHash) {
-            try {
-              contractDocument = await ipfsService.getData(contractData.contractHash);
-            } catch (error) {
-              console.warn('無法取得合約文件:', contractData.contractHash);
-            }
-          }
-
-          contracts.push({
-            pubkey: account.pubkey.toString(),
-            ...contractData,
-            contractDocument,
-            userRole: contractData.landlord === userDid ? 'landlord' : 'tenant'
-          });
-        }
-      } catch (error) {
-        console.warn('解析合約資料失敗:', error);
-      }
-    }
+        return {
+          ...contract,
+          contractDocument,
+          monthlyRent: contract.monthlyRent.toString(),
+          depositAmount: contract.depositAmount.toString(),
+          startDate: new Date(contract.startDate * 1000).toISOString(),
+          endDate: new Date(contract.endDate * 1000).toISOString(),
+          createdAt: new Date(contract.createdAt * 1000).toISOString()
+        };
+      })
+    );
 
     res.json({
       success: true,
-      data: contracts
+      data: contractsWithDetails
     });
   } catch (error) {
     console.error('取得用戶合約失敗:', error);
@@ -72,16 +56,14 @@ router.get('/:contractId', async (req, res) => {
     const { contractId } = req.params;
     const contractPubkey = new PublicKey(contractId);
     
-    const accountInfo = await connection.getAccountInfo(contractPubkey);
-    if (!accountInfo) {
+    const contractData = await solanaService.getAccountData(contractPubkey);
+    if (!contractData) {
       return res.status(404).json({ 
         success: false, 
         error: '合約不存在' 
       });
     }
 
-    const contractData = JSON.parse(accountInfo.data.toString());
-    
     // 從 IPFS 取得合約文件
     let contractDocument = null;
     if (contractData.contractHash) {
@@ -97,7 +79,12 @@ router.get('/:contractId', async (req, res) => {
       data: {
         pubkey: contractPubkey.toString(),
         ...contractData,
-        contractDocument
+        contractDocument,
+        monthlyRent: contractData.monthlyRent.toString(),
+        depositAmount: contractData.depositAmount.toString(),
+        startDate: new Date(contractData.startDate * 1000).toISOString(),
+        endDate: new Date(contractData.endDate * 1000).toISOString(),
+        createdAt: new Date(contractData.createdAt * 1000).toISOString()
       }
     });
   } catch (error) {
@@ -109,8 +96,8 @@ router.get('/:contractId', async (req, res) => {
   }
 });
 
-// 創建合約
-router.post('/', async (req, res) => {
+// 準備創建合約
+router.post('/prepare', async (req, res) => {
   try {
     const {
       listingId,
@@ -149,19 +136,14 @@ router.post('/', async (req, res) => {
     // 上傳合約文件到 IPFS
     const contractHash = await ipfsService.uploadContractDocument(contractDocument);
 
-    // 計算合約 PDA
+    // 計算 PDA
     const listingPubkey = new PublicKey(listingId);
     const tenantPubkey = new PublicKey(tenantDid);
-    const [contractPDA] = PublicKey.findProgramAddressSync(
-      [Buffer.from('contract'), listingPubkey.toBuffer(), tenantPubkey.toBuffer()],
-      ZUVI_PROGRAM_ID
-    );
-
-    // 計算託管帳戶 PDA
-    const [escrowPDA] = PublicKey.findProgramAddressSync(
+    const [contractPDA] = solanaService.getContractPDA(listingPubkey, tenantPubkey);
+    const escrowPDA = PublicKey.findProgramAddressSync(
       [Buffer.from('escrow'), contractPDA.toBuffer()],
-      ZUVI_PROGRAM_ID
-    );
+      new PublicKey('2h2Gw1oK7zNHed7GBXFShqvJGzBaVkPEMB7EDRUcVdct')
+    )[0];
 
     res.json({
       success: true,
@@ -170,8 +152,8 @@ router.post('/', async (req, res) => {
         contractPDA: contractPDA.toString(),
         escrowPDA: escrowPDA.toString(),
         transactionData: {
-          startDate: new Date(startDate).getTime() / 1000,
-          endDate: new Date(endDate).getTime() / 1000,
+          startDate: Math.floor(new Date(startDate).getTime() / 1000),
+          endDate: Math.floor(new Date(endDate).getTime() / 1000),
           paymentDay: parseInt(paymentDay),
           contractHash
         }
@@ -186,8 +168,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 簽署合約並支付
-router.post('/:contractId/sign-and-pay', async (req, res) => {
+// 準備簽署合約並支付
+router.post('/:contractId/sign-and-pay/prepare', async (req, res) => {
   try {
     const { contractId } = req.params;
     const { tenantDid } = req.body;
@@ -197,23 +179,23 @@ router.post('/:contractId/sign-and-pay', async (req, res) => {
     }
 
     const contractPubkey = new PublicKey(contractId);
-    
-    // 取得合約資料
-    const contractAccount = await connection.getAccountInfo(contractPubkey);
-    if (!contractAccount) {
+    const contractData = await solanaService.getAccountData(contractPubkey);
+
+    if (!contractData) {
       return res.status(404).json({ error: '合約不存在' });
     }
 
-    const contractData = JSON.parse(contractAccount.data.toString());
+    const [platformPDA] = solanaService.getPlatformPDA();
 
     res.json({
       success: true,
       data: {
         contractPDA: contractId,
-        listingPDA: contractData.listing,
-        escrowPDA: contractData.escrowAccount,
+        listingPDA: contractData.listing.toString(),
+        escrowPDA: contractData.escrowAccount.toString(),
+        platformPDA: platformPDA.toString(),
         transactionData: {
-          totalAmount: contractData.depositAmount + contractData.monthlyRent
+          totalAmount: (contractData.depositAmount + contractData.monthlyRent).toString()
         }
       }
     });
@@ -226,8 +208,8 @@ router.post('/:contractId/sign-and-pay', async (req, res) => {
   }
 });
 
-// 支付月租
-router.post('/:contractId/pay-rent', async (req, res) => {
+// 準備支付月租
+router.post('/:contractId/pay-rent/prepare', async (req, res) => {
   try {
     const { contractId } = req.params;
     const { tenantDid, paymentMonth } = req.body;
@@ -237,13 +219,22 @@ router.post('/:contractId/pay-rent', async (req, res) => {
     }
 
     const contractPubkey = new PublicKey(contractId);
+    const contractData = await solanaService.getAccountData(contractPubkey);
+
+    if (!contractData) {
+      return res.status(404).json({ error: '合約不存在' });
+    }
+
+    const [platformPDA] = solanaService.getPlatformPDA();
 
     res.json({
       success: true,
       data: {
         contractPDA: contractId,
+        platformPDA: platformPDA.toString(),
         transactionData: {
-          paymentMonth
+          paymentMonth,
+          amount: contractData.monthlyRent.toString()
         }
       }
     });
@@ -256,8 +247,8 @@ router.post('/:contractId/pay-rent', async (req, res) => {
   }
 });
 
-// 終止合約
-router.post('/:contractId/terminate', async (req, res) => {
+// 準備終止合約
+router.post('/:contractId/terminate/prepare', async (req, res) => {
   try {
     const { contractId } = req.params;
     const { userDid, reason } = req.body;
@@ -267,11 +258,18 @@ router.post('/:contractId/terminate', async (req, res) => {
     }
 
     const contractPubkey = new PublicKey(contractId);
+    const contractData = await solanaService.getAccountData(contractPubkey);
+
+    if (!contractData) {
+      return res.status(404).json({ error: '合約不存在' });
+    }
 
     res.json({
       success: true,
       data: {
         contractPDA: contractId,
+        listingPDA: contractData.listing.toString(),
+        escrowPDA: contractData.escrowAccount.toString(),
         transactionData: {
           reason
         }

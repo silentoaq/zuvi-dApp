@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PublicKey } from '@solana/web3.js';
-import { connection, getListingPDA, ZUVI_PROGRAM_ID } from '../config/solana';
+import { solanaService } from '../services/solana';
 import { ipfsService, PropertyDetailsData } from '../services/ipfs';
 
 const router = Router();
@@ -8,55 +8,39 @@ const router = Router();
 // 取得所有房源
 router.get('/', async (req, res) => {
   try {
-    const { status = 'Available' } = req.query;
+    const { status } = req.query;
     
-    // 從區塊鏈取得所有房源帳戶
-    const accounts = await connection.getProgramAccounts(ZUVI_PROGRAM_ID, {
-      filters: [
-        {
-          memcmp: {
-            offset: 0,
-            bytes: 'AhkZIQwFswtr' // PropertyListing discriminator
-          }
-        }
-      ]
-    });
-
-    const listings = [];
+    const listings = await solanaService.getAllListings();
     
-    for (const account of accounts) {
-      try {
-        // 這裡會用到 zuvi.ts types 來解析資料
-        const listingData = JSON.parse(account.account.data.toString());
-        
-        // 如果指定狀態，過濾結果
-        if (status && listingData.status !== status) {
-          continue;
-        }
+    // 過濾狀態
+    const filteredListings = status ? 
+      listings.filter(listing => listing.status.hasOwnProperty(status.toString().toLowerCase())) :
+      listings;
 
-        // 從 IPFS 取得詳細資料
+    // 從 IPFS 取得詳細資料
+    const listingsWithDetails = await Promise.all(
+      filteredListings.map(async (listing) => {
         let propertyDetails = null;
-        if (listingData.propertyDetailsHash) {
+        if (listing.propertyDetailsHash) {
           try {
-            propertyDetails = await ipfsService.getData(listingData.propertyDetailsHash);
+            propertyDetails = await ipfsService.getData(listing.propertyDetailsHash);
           } catch (error) {
-            console.warn('無法取得房源詳細資料:', listingData.propertyDetailsHash);
+            console.warn('無法取得房源詳細資料:', listing.propertyDetailsHash);
           }
         }
-
-        listings.push({
-          pubkey: account.pubkey.toString(),
-          ...listingData,
-          propertyDetails
-        });
-      } catch (error) {
-        console.warn('解析房源資料失敗:', error);
-      }
-    }
+        
+        return {
+          ...listing,
+          propertyDetails,
+          monthlyRent: listing.monthlyRent.toString(),
+          createdAt: new Date(listing.createdAt * 1000).toISOString()
+        };
+      })
+    );
 
     res.json({
       success: true,
-      data: listings
+      data: listingsWithDetails
     });
   } catch (error) {
     console.error('取得房源列表失敗:', error);
@@ -72,19 +56,16 @@ router.get('/:propertyId', async (req, res) => {
   try {
     const { propertyId } = req.params;
     
-    const [listingPDA] = getListingPDA(propertyId);
-    const accountInfo = await connection.getAccountInfo(listingPDA);
+    const [listingPDA] = solanaService.getListingPDA(propertyId);
+    const listingData = await solanaService.getAccountData(listingPDA);
     
-    if (!accountInfo) {
+    if (!listingData) {
       return res.status(404).json({ 
         success: false, 
         error: '房源不存在' 
       });
     }
 
-    // 解析房源資料
-    const listingData = JSON.parse(accountInfo.data.toString());
-    
     // 從 IPFS 取得詳細資料
     let propertyDetails = null;
     if (listingData.propertyDetailsHash) {
@@ -100,7 +81,9 @@ router.get('/:propertyId', async (req, res) => {
       data: {
         pubkey: listingPDA.toString(),
         ...listingData,
-        propertyDetails
+        propertyDetails,
+        monthlyRent: listingData.monthlyRent.toString(),
+        createdAt: new Date(listingData.createdAt * 1000).toISOString()
       }
     });
   } catch (error) {
@@ -112,8 +95,8 @@ router.get('/:propertyId', async (req, res) => {
   }
 });
 
-// 發布房源 (需要前端簽名)
-router.post('/', async (req, res) => {
+// 準備發布房源交易
+router.post('/prepare', async (req, res) => {
   try {
     const {
       propertyId,
@@ -124,7 +107,6 @@ router.post('/', async (req, res) => {
       propertyDetails
     } = req.body;
 
-    // 驗證必要欄位
     if (!propertyId || !ownerDid || !ownerAttestation || !monthlyRent || !depositMonths || !propertyDetails) {
       return res.status(400).json({ error: '缺少必要欄位' });
     }
@@ -133,13 +115,15 @@ router.post('/', async (req, res) => {
     const propertyDetailsHash = await ipfsService.uploadPropertyDetails(propertyDetails as PropertyDetailsData);
 
     // 準備交易資料
-    const [listingPDA] = getListingPDA(propertyId);
+    const [listingPDA] = solanaService.getListingPDA(propertyId);
+    const [platformPDA] = solanaService.getPlatformPDA();
     
     res.json({
       success: true,
       data: {
         propertyDetailsHash,
         listingPDA: listingPDA.toString(),
+        platformPDA: platformPDA.toString(),
         transactionData: {
           propertyId,
           ownerAttestation,
@@ -159,7 +143,7 @@ router.post('/', async (req, res) => {
 });
 
 // 下架房源
-router.delete('/:propertyId', async (req, res) => {
+router.post('/:propertyId/delist', async (req, res) => {
   try {
     const { propertyId } = req.params;
     const { ownerDid } = req.body;
@@ -168,7 +152,7 @@ router.delete('/:propertyId', async (req, res) => {
       return res.status(400).json({ error: '缺少擁有者 DID' });
     }
 
-    const [listingPDA] = getListingPDA(propertyId);
+    const [listingPDA] = solanaService.getListingPDA(propertyId);
     
     res.json({
       success: true,
@@ -184,6 +168,29 @@ router.delete('/:propertyId', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: '準備下架房源失敗' 
+    });
+  }
+});
+
+// 取得房源的申請列表
+router.get('/:propertyId/applications', async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    
+    const [listingPDA] = solanaService.getListingPDA(propertyId);
+    const accounts = await solanaService.getAllListings();
+    
+    // 這裡需要從智能合約取得申請資料
+    // 由於時間考量，先返回空陣列
+    res.json({
+      success: true,
+      data: []
+    });
+  } catch (error) {
+    console.error('取得申請列表失敗:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '取得申請列表失敗' 
     });
   }
 });

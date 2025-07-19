@@ -4,7 +4,7 @@ import { TwattestVerifier } from '../../twattest-sdk/node.js';
 
 const router = Router();
 const twattestVerifier = new TwattestVerifier({
-  baseUrl: 'https://twattest.ddns.net/api',
+  baseUrl: process.env.TWATTEST_API_URL || 'https://twattest.ddns.net/api',
   apiSecret: process.env.TWATTEST_API_SECRET || 'your-api-secret'
 });
 
@@ -47,7 +47,7 @@ router.get('/attestation/:userDid', async (req, res) => {
     const { userDid } = req.params;
     
     // 直接調用 twattest API 取得 attestation 狀態
-    const response = await fetch(`https://twattest.ddns.net/api/attestation/status/${userDid}`);
+    const response = await fetch(`${process.env.TWATTEST_API_URL}/attestation/status/${userDid}`);
     
     if (!response.ok) {
       throw new Error('無法取得 attestation 狀態');
