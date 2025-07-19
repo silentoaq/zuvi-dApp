@@ -1029,6 +1029,47 @@ export type Zuvi = {
       ]
     }
   ],
+  "events": [
+    {
+      "name": "contractSigned",
+      "discriminator": [
+        41,
+        58,
+        198,
+        149,
+        37,
+        119,
+        227,
+        182
+      ]
+    },
+    {
+      "name": "propertyListed",
+      "discriminator": [
+        33,
+        100,
+        200,
+        151,
+        150,
+        150,
+        33,
+        145
+      ]
+    },
+    {
+      "name": "rentPaid",
+      "discriminator": [
+        140,
+        29,
+        172,
+        69,
+        152,
+        38,
+        73,
+        241
+      ]
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -1211,6 +1252,34 @@ export type Zuvi = {
           },
           {
             "name": "cancelled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "contractSigned",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "contract",
+            "type": "pubkey"
+          },
+          {
+            "name": "landlord",
+            "type": "pubkey"
+          },
+          {
+            "name": "tenant",
+            "type": "pubkey"
+          },
+          {
+            "name": "totalPayment",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }
@@ -1468,6 +1537,34 @@ export type Zuvi = {
       }
     },
     {
+      "name": "propertyListed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "listing",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "propertyId",
+            "type": "string"
+          },
+          {
+            "name": "monthlyRent",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "propertyListing",
       "docs": [
         "房源列表賬戶"
@@ -1559,6 +1656,34 @@ export type Zuvi = {
               "bump seed"
             ],
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "rentPaid",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "contract",
+            "type": "pubkey"
+          },
+          {
+            "name": "tenant",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "paymentMonth",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }

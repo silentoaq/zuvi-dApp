@@ -1023,6 +1023,47 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "ContractSigned",
+      "discriminator": [
+        41,
+        58,
+        198,
+        149,
+        37,
+        119,
+        227,
+        182
+      ]
+    },
+    {
+      "name": "PropertyListed",
+      "discriminator": [
+        33,
+        100,
+        200,
+        151,
+        150,
+        150,
+        33,
+        145
+      ]
+    },
+    {
+      "name": "RentPaid",
+      "discriminator": [
+        140,
+        29,
+        172,
+        69,
+        152,
+        38,
+        73,
+        241
+      ]
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -1205,6 +1246,34 @@
           },
           {
             "name": "Cancelled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ContractSigned",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "contract",
+            "type": "pubkey"
+          },
+          {
+            "name": "landlord",
+            "type": "pubkey"
+          },
+          {
+            "name": "tenant",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_payment",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }
@@ -1462,6 +1531,34 @@
       }
     },
     {
+      "name": "PropertyListed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "listing",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "property_id",
+            "type": "string"
+          },
+          {
+            "name": "monthly_rent",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "PropertyListing",
       "docs": [
         "房源列表賬戶"
@@ -1553,6 +1650,34 @@
               "bump seed"
             ],
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RentPaid",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "contract",
+            "type": "pubkey"
+          },
+          {
+            "name": "tenant",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "payment_month",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
           }
         ]
       }
