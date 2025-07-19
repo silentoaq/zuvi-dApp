@@ -1,14 +1,33 @@
+import dotenv from 'dotenv';
+import { existsSync } from 'fs';
+
+// Debug 資訊
+console.log('=== Debug 資訊 ===');
+console.log('當前工作目錄:', process.cwd());
+console.log('.env 文件存在?', existsSync('.env'));
+console.log('嘗試載入 .env...');
+
+// 載入環境變數
+const result = dotenv.config();
+if (result.error) {
+  console.error('dotenv 錯誤:', result.error);
+} else {
+  console.log('dotenv 載入成功!');
+}
+
+console.log('RPC_ROOT:', process.env.RPC_ROOT);
+console.log('ZUVI_PROGRAM_ID:', process.env.ZUVI_PROGRAM_ID);
+console.log('PAYER_KEYPAIR 長度:', process.env.PAYER_KEYPAIR?.length);
+console.log('================');
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { authRoutes } from './routes/auth';
 import { listingsRoutes } from './routes/listings';
 import { applicationsRoutes } from './routes/applications';
 import { contractsRoutes } from './routes/contracts';
 import { ipfsRoutes } from './routes/ipfs';
 import { transactionRoutes } from './routes/transactions';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
