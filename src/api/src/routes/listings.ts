@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { PublicKey } from '@solana/web3.js';
 import { getSolanaService } from '../services/solana.js';
 import { ipfsService, PropertyDetailsData } from '../services/ipfs.js';
 
@@ -7,14 +6,36 @@ const router = Router();
 
 router.get('/', async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, minRent, maxRent, depositMonths } = req.query;
     
     const solanaService = getSolanaService();
     const listings = await solanaService.getAllListings();
     
-    const filteredListings = status ? 
-      listings.filter(listing => listing.status.hasOwnProperty(status.toString().toLowerCase())) :
-      listings;
+    let filteredListings = listings;
+    
+    if (status) {
+      filteredListings = filteredListings.filter(listing => 
+        listing.status.hasOwnProperty(status.toString().toLowerCase())
+      );
+    }
+    
+    if (minRent) {
+      filteredListings = filteredListings.filter(listing => 
+        parseInt(listing.monthlyRent) >= parseInt(minRent as string)
+      );
+    }
+    
+    if (maxRent) {
+      filteredListings = filteredListings.filter(listing => 
+        parseInt(listing.monthlyRent) <= parseInt(maxRent as string)
+      );
+    }
+    
+    if (depositMonths) {
+      filteredListings = filteredListings.filter(listing => 
+        listing.depositMonths === parseInt(depositMonths as string)
+      );
+    }
 
     const listingsWithDetails = await Promise.all(
       filteredListings.map(async (listing) => {

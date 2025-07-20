@@ -13,7 +13,7 @@ interface Notification {
 export const useNotifications = () => {
   const { publicKey } = useWallet();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   useEffect(() => {
     if (publicKey) {
