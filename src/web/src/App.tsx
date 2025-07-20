@@ -1,12 +1,24 @@
-import { ThemeProvider } from "@/components/theme-provider"
-import { Button } from "@/components/ui/button"
-function App() {
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import MainLayout from './components/layouts/MainLayout';
+import { HomePage } from './pages/HomePage';
+import { PropertiesPage } from './pages/PropertiesPage';
+import { ApplicationsPage } from './pages/ApplicationsPage';
+import { ContractsPage } from './pages/ContractsPage';
+import { ListingsPage } from './pages/ListingsPage';
+
+const App: React.FC = () => {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme"><div className="flex min-h-svh flex-col items-center justify-center">
-      <Button>Click me</Button>
-    </div></ThemeProvider>
+    <Routes>
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="properties" element={<PropertiesPage />} />
+        <Route path="applications" element={<ApplicationsPage />} />
+        <Route path="contracts" element={<ContractsPage />} />
+        <Route path="listings" element={<ListingsPage />} />
+      </Route>
+    </Routes>
+  );
+};
 
-  )
-}
-
-export default App
+export default App;
