@@ -6,12 +6,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
-interface Credentials {
-  hasCitizenCredential: boolean;
-  hasPropertyCredential: boolean;
-  propertyCount: number;
-}
-
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const { publicKey, disconnect } = useWallet();
@@ -77,11 +71,13 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col">
+      {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center">
+          {/* 使用 Grid 布局確保精確控制 */}
+          <div className="grid grid-cols-3 items-center h-16">
+            {/* Logo - 左側 */}
+            <div className="flex justify-start">
               <button
                 onClick={() => navigate('/')}
                 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
@@ -90,26 +86,28 @@ const MainLayout: React.FC = () => {
               </button>
             </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
-              {navItems.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => navigate(item.path)}
-                  className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                >
-                  <item.icon className="w-4 h-4" />
-                  <span>{item.name}</span>
-                </button>
-              ))}
+            {/* Desktop Navigation - 中間 */}
+            <nav className="hidden md:flex justify-center">
+              <div className="flex space-x-8">
+                {navItems.map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => navigate(item.path)}
+                    className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors whitespace-nowrap"
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </button>
+                ))}
+              </div>
             </nav>
 
-            {/* Right side tools */}
-            <div className="flex items-center space-x-4">
-              {/* Notifications */}
+            {/* Right side tools - 右側 */}
+            <div className="flex items-center justify-end space-x-2 sm:space-x-3">
+              {/* Notifications - 在小螢幕隱藏 */}
               <button 
                 onClick={() => navigate('/notifications')}
-                className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                className="hidden sm:block relative p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
               >
                 <Bell className="w-5 h-5" />
                 {notifications.length > 0 && (
@@ -119,17 +117,17 @@ const MainLayout: React.FC = () => {
                 )}
               </button>
 
-              {/* Theme Toggle */}
+              {/* Theme Toggle - 在小螢幕隱藏 */}
               <button
                 onClick={toggleTheme}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                className="hidden sm:block p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
               >
                 {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
               </button>
 
               {/* Credentials Status - Desktop */}
               {publicKey && !authLoading && (
-                <div className="hidden md:flex items-center space-x-2">
+                <div className="hidden lg:flex items-center space-x-2">
                   {credentials?.hasPropertyCredential && (
                     <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                       🏠 {credentials.propertyCount}
@@ -146,36 +144,45 @@ const MainLayout: React.FC = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowWalletMenu(!showWalletMenu)}
-                    className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                   >
-                    <span className="hidden sm:inline text-gray-700 dark:text-gray-300">
-                      {formatAddress(publicKey.toString())}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {balance.toFixed(2)} USDC
-                    </span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                    <span className="font-medium hidden sm:inline">{formatAddress(publicKey.toString())}</span>
+                    <span className="font-medium sm:hidden">已連接</span>
+                    {balance > 0 && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400 hidden lg:inline">
+                        ${balance.toFixed(2)}
+                      </span>
+                    )}
                   </button>
 
                   {/* Wallet Dropdown */}
                   {showWalletMenu && (
                     <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm text-gray-500 dark:text-gray-400">Wallet</span>
-                          <button
-                            onClick={copyAddress}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
+                      <div className="p-4 space-y-3">
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">錢包地址</p>
+                          <div className="flex items-center space-x-2">
+                            <code className="text-xs font-mono flex-1 truncate">
+                              {publicKey.toString()}
+                            </code>
+                            <button
+                              onClick={copyAddress}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-xs font-mono text-gray-700 dark:text-gray-300 mb-3 break-all">
-                          {publicKey.toString()}
-                        </p>
-                        <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
-                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                            餘額: {balance.toFixed(2)} USDC
-                          </p>
+
+                        {balance > 0 && (
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">USDC 餘額</p>
+                            <p className="text-lg font-semibold">${balance.toFixed(2)}</p>
+                          </div>
+                        )}
+
+                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                           <button
                             onClick={handleDisconnect}
                             className="flex items-center space-x-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
@@ -191,7 +198,7 @@ const MainLayout: React.FC = () => {
               ) : (
                 <button
                   onClick={() => setVisible(true)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                  className="px-3 sm:px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors whitespace-nowrap"
                 >
                   連接錢包
                 </button>
