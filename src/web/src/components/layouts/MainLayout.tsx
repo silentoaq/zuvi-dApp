@@ -5,6 +5,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { useUSDCBalance } from '../../hooks/useUSDCBalance';
 
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const MainLayout: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showWalletMenu, setShowWalletMenu] = useState(false);
-  const [balance, setBalance] = useState<number>(0);
+  const { balance, loading: balanceLoading, error: balanceError, refetch: refetchBalance } = useUSDCBalance();
 
   // Theme handling
   useEffect(() => {
@@ -26,14 +27,6 @@ const MainLayout: React.FC = () => {
       document.documentElement.classList.toggle('dark', savedTheme === 'dark');
     }
   }, []);
-
-  // Fetch USDC balance
-  useEffect(() => {
-    if (publicKey) {
-      // TODO: Fetch actual USDC balance
-      setBalance(1250.50); // Mock value
-    }
-  }, [publicKey]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -163,47 +156,63 @@ const MainLayout: React.FC = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowWalletMenu(!showWalletMenu)}
-                    className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   >
-                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                    <span className="font-medium hidden sm:inline">{formatAddress(publicKey.toString())}</span>
-                    <span className="font-medium sm:hidden">已連接</span>
-                    {balance > 0 && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 hidden lg:inline">
-                        ${balance.toFixed(2)}
-                      </span>
-                    )}
+                    <span className="hidden sm:inline text-gray-700 dark:text-gray-300">
+                      {formatAddress(publicKey.toString())}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {balanceLoading ? (
+                        <span className="animate-pulse">載入中...</span>
+                      ) : (
+                        `${balance.toFixed(2)} USDC`
+                      )}
+                    </span>
                   </button>
 
                   {showWalletMenu && (
                     <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                      <div className="p-4 space-y-3">
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">錢包地址</p>
-                          <div className="flex items-center space-x-2">
-                            <code className="text-xs font-mono flex-1 truncate">
-                              {publicKey.toString()}
-                            </code>
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">錢包</span>
+                          <button
+                            onClick={copyAddress}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <p className="text-xs font-mono text-gray-700 dark:text-gray-300 mb-3 break-all">
+                          {publicKey.toString()}
+                        </p>
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              USDC 餘額
+                            </p>
                             <button
-                              onClick={copyAddress}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                              onClick={refetchBalance}
+                              className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+                              disabled={balanceLoading}
                             >
-                              <Copy className="w-3 h-3" />
+                              刷新
                             </button>
                           </div>
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {balanceLoading ? (
+                              <span className="text-base animate-pulse">載入中...</span>
+                            ) : (
+                              `${balance.toFixed(2)} USDC`
+                            )}
+                          </p>
+                          {balanceError && (
+                            <p className="text-xs text-red-500 mt-1">{balanceError}</p>
+                          )}
                         </div>
-
-                        {balance > 0 && (
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">USDC 餘額</p>
-                            <p className="text-lg font-semibold">${balance.toFixed(2)}</p>
-                          </div>
-                        )}
-
-                        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
                           <button
                             onClick={handleDisconnect}
-                            className="flex items-center space-x-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                            className="flex items-center space-x-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 w-full"
                           >
                             <LogOut className="w-4 h-4" />
                             <span>斷開連接</span>
