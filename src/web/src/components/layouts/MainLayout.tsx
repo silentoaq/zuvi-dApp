@@ -71,12 +71,9 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* 使用 Grid 布局確保精確控制 */}
-          <div className="grid grid-cols-3 items-center h-16">
-            {/* Logo - 左側 */}
+          <div className="flex justify-between items-center h-16 md:h-20">
             <div className="flex justify-start">
               <button
                 onClick={() => navigate('/')}
@@ -86,7 +83,6 @@ const MainLayout: React.FC = () => {
               </button>
             </div>
 
-            {/* Desktop Navigation - 中間 */}
             <nav className="hidden md:flex justify-center">
               <div className="flex space-x-8">
                 {navItems.map((item) => (
@@ -102,9 +98,7 @@ const MainLayout: React.FC = () => {
               </div>
             </nav>
 
-            {/* Right side tools - 右側 */}
             <div className="flex items-center justify-end space-x-2 sm:space-x-3">
-              {/* Notifications - 在小螢幕隱藏 */}
               <button
                 onClick={() => navigate('/notifications')}
                 className="hidden sm:block relative p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
@@ -117,7 +111,6 @@ const MainLayout: React.FC = () => {
                 )}
               </button>
 
-              {/* Theme Toggle - 在小螢幕隱藏 */}
               <button
                 onClick={toggleTheme}
                 className="hidden sm:block p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
@@ -125,7 +118,6 @@ const MainLayout: React.FC = () => {
                 {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
               </button>
 
-              {/* Credentials Status - Desktop */}
               {publicKey && !authLoading && (credentials?.hasCitizenCredential || credentials?.hasPropertyCredential) && (
                 <div className="hidden md:flex items-center">
                   <div
@@ -144,7 +136,6 @@ const MainLayout: React.FC = () => {
                       </>
                     )}
 
-                    {/* Tooltip */}
                     <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                       <div className="bg-gray-800 dark:bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
                         <div className="space-y-1">
@@ -168,7 +159,6 @@ const MainLayout: React.FC = () => {
                 </div>
               )}
 
-              {/* Wallet Info */}
               {publicKey ? (
                 <div className="relative">
                   <button
@@ -185,7 +175,6 @@ const MainLayout: React.FC = () => {
                     )}
                   </button>
 
-                  {/* Wallet Dropdown */}
                   {showWalletMenu && (
                     <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                       <div className="p-4 space-y-3">
@@ -233,7 +222,6 @@ const MainLayout: React.FC = () => {
                 </button>
               )}
 
-              {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 text-gray-600 dark:text-gray-400"
@@ -244,7 +232,6 @@ const MainLayout: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
             <div className="px-4 py-2 space-y-1">
@@ -262,20 +249,26 @@ const MainLayout: React.FC = () => {
                 </button>
               ))}
 
-              {/* Mobile Credentials */}
               {publicKey && credentials && (
-                <div className="px-3 py-2">
-                  <div className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">憑證：</span>
-                    {credentials.hasCitizenCredential && (
-                      <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    )}
-                    {credentials.hasPropertyCredential && (
-                      <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
-                        <Building className="w-4 h-4" />
-                        <span className="text-sm">{credentials.propertyCount}</span>
-                      </div>
-                    )}
+                <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      我的憑證
+                    </span>
+                    <div className="flex items-center space-x-3">
+                      {credentials.hasCitizenCredential && (
+                        <div className="flex items-center space-x-1">
+                          <User className="w-4 h-4 text-green-600" />
+                          <span className="text-xs text-gray-600 dark:text-gray-400">已驗證</span>
+                        </div>
+                      )}
+                      {credentials.hasPropertyCredential && (
+                        <div className="flex items-center space-x-1">
+                          <Building className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium">{credentials.propertyCount}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -284,12 +277,10 @@ const MainLayout: React.FC = () => {
         )}
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>
 
-      {/* Footer */}
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-sm text-gray-500 dark:text-gray-400">
