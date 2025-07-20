@@ -1,34 +1,68 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { TwattestSDK } from '../../twattest-sdk';
 
-interface Credentials {
-  hasCitizenCredential: boolean;
-  hasPropertyCredential: boolean;
-  propertyCount: number;
+import type { UserPermissions, AttestationStatus } from '../../twattest-sdk';
+
+type Credentials = UserPermissions;
+
+const sdk = new TwattestSDK({
+  baseUrl: 'https://twattest.ddns.net/api'
+});
+
+interface AuthState {
+  credentials: Credentials | null;
+  attestationStatus: AttestationStatus | null;
+  loading: boolean;
+  error: string | null;
 }
 
 export const useAuth = () => {
   const { publicKey } = useWallet();
-  const [credentials, setCredentials] = useState<Credentials | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [authState, setAuthState] = useState<AuthState>({
+    credentials: null,
+    attestationStatus: null,
+    loading: false,
+    error: null
+  });
 
   useEffect(() => {
     if (publicKey) {
-      setLoading(true);
-      fetch(`/api/auth/permissions/${publicKey.toString()}`)
-        .then(res => res.json())
-        .then(data => {
-          setCredentials(data.data);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error('Failed to fetch credentials:', err);
-          setLoading(false);
-        });
+      const did = publicKey.toString();
+      checkUserAuth(did);
     } else {
-      setCredentials(null);
+      setAuthState({
+        credentials: null,
+        attestationStatus: null,
+        loading: false,
+        error: null
+      });
     }
   }, [publicKey]);
 
-  return { credentials, loading };
+  const checkUserAuth = async (did: string) => {
+    setAuthState(prev => ({ ...prev, loading: true }));
+    try {
+      const permissions = await sdk.checkPermissions(did);
+      
+      const attestationStatus = await sdk.getAttestationStatus(did);
+      
+      setAuthState({
+        credentials: permissions,
+        attestationStatus,
+        loading: false,
+        error: null
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+      setAuthState({
+        credentials: null,
+        attestationStatus: null,
+        loading: false,
+        error: errorMessage
+      });
+    }
+  };
+
+  return authState;
 };

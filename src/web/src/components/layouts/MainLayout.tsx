@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Sun, Moon, Menu, X, Home, FileText, Briefcase, PlusCircle, LogOut, Copy } from 'lucide-react';
+import { Bell, Sun, Moon, Menu, X, Home, FileText, Briefcase, PlusCircle, LogOut, Copy, User, Building } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -12,7 +12,7 @@ const MainLayout: React.FC = () => {
   const { setVisible } = useWalletModal();
   const { credentials, loading: authLoading } = useAuth();
   const { notifications } = useNotifications();
-  
+
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showWalletMenu, setShowWalletMenu] = useState(false);
@@ -105,7 +105,7 @@ const MainLayout: React.FC = () => {
             {/* Right side tools - 右側 */}
             <div className="flex items-center justify-end space-x-2 sm:space-x-3">
               {/* Notifications - 在小螢幕隱藏 */}
-              <button 
+              <button
                 onClick={() => navigate('/notifications')}
                 className="hidden sm:block relative p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
               >
@@ -126,16 +126,45 @@ const MainLayout: React.FC = () => {
               </button>
 
               {/* Credentials Status - Desktop */}
-              {publicKey && !authLoading && (
-                <div className="hidden lg:flex items-center space-x-2">
-                  {credentials?.hasPropertyCredential && (
-                    <span className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                      🏠 {credentials.propertyCount}
-                    </span>
-                  )}
-                  {credentials?.hasCitizenCredential && (
-                    <span className="text-sm text-gray-600 dark:text-gray-400">👤</span>
-                  )}
+              {publicKey && !authLoading && (credentials?.hasCitizenCredential || credentials?.hasPropertyCredential) && (
+                <div className="hidden md:flex items-center">
+                  <div
+                    className="group relative flex items-center space-x-1 px-2.5 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-help"
+                    title="已驗證憑證"
+                  >
+                    {credentials?.hasCitizenCredential && (
+                      <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    )}
+                    {credentials?.hasPropertyCredential && (
+                      <>
+                        <Building className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {credentials.propertyCount}
+                        </span>
+                      </>
+                    )}
+
+                    {/* Tooltip */}
+                    <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                      <div className="bg-gray-800 dark:bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
+                        <div className="space-y-1">
+                          {credentials?.hasCitizenCredential && (
+                            <div className="flex items-center space-x-2">
+                              <User className="w-3 h-3" />
+                              <span>自然人憑證已驗證</span>
+                            </div>
+                          )}
+                          {credentials?.hasPropertyCredential && (
+                            <div className="flex items-center space-x-2">
+                              <Building className="w-3 h-3" />
+                              <span>擁有 {credentials.propertyCount} 個房產憑證</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-900 rotate-45"></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -232,15 +261,22 @@ const MainLayout: React.FC = () => {
                   <span>{item.name}</span>
                 </button>
               ))}
-              
+
               {/* Mobile Credentials */}
               {publicKey && credentials && (
-                <div className="flex items-center space-x-3 px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
-                  <span>憑證狀態:</span>
-                  {credentials.hasPropertyCredential && (
-                    <span>🏠 {credentials.propertyCount}</span>
-                  )}
-                  {credentials.hasCitizenCredential && <span>👤</span>}
+                <div className="px-3 py-2">
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">憑證：</span>
+                    {credentials.hasCitizenCredential && (
+                      <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    )}
+                    {credentials.hasPropertyCredential && (
+                      <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
+                        <Building className="w-4 h-4" />
+                        <span className="text-sm">{credentials.propertyCount}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
