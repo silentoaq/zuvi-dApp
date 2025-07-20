@@ -30,6 +30,13 @@ export const useAuth = () => {
     if (publicKey) {
       const did = publicKey.toString();
       checkUserAuth(did);
+      
+      // 每30秒更新一次
+      const interval = setInterval(() => {
+        checkUserAuth(did);
+      }, 30000);
+
+      return () => clearInterval(interval);
     } else {
       setAuthState({
         credentials: null,
@@ -44,7 +51,6 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, loading: true }));
     try {
       const permissions = await sdk.checkPermissions(did);
-      
       const attestationStatus = await sdk.getAttestationStatus(did);
       
       setAuthState({
