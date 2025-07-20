@@ -2,22 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Bell, Sun, Moon, Menu, X, Home, FileText, Briefcase, PlusCircle, LogOut, Copy, User, Building } from 'lucide-react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useUSDCBalance } from '../../hooks/useUSDCBalance';
+
 
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const { publicKey, disconnect } = useWallet();
   const { setVisible } = useWalletModal();
-  const { credentials } = useAuth();
+  const { credentials, balance, loading } = useAuth();
   const { notifications } = useNotifications();
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showWalletMenu, setShowWalletMenu] = useState(false);
-  const { balance, loading: balanceLoading } = useUSDCBalance();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -64,7 +63,7 @@ const MainLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 
+              <h1
                 className="text-2xl font-bold text-blue-600 dark:text-blue-400 cursor-pointer"
                 onClick={() => navigate('/')}
               >
@@ -109,22 +108,19 @@ const MainLayout: React.FC = () => {
                     className="group relative flex items-center space-x-1 px-2.5 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-help"
                     title="憑證狀態"
                   >
-                    <User className={`w-4 h-4 ${
-                      credentials?.hasCitizenCredential 
-                        ? 'text-blue-600 dark:text-blue-400' 
+                    <User className={`w-4 h-4 ${credentials?.hasCitizenCredential
+                        ? 'text-blue-600 dark:text-blue-400'
                         : 'text-gray-400 dark:text-gray-500'
-                    }`} />
-                    
-                    <Building className={`w-4 h-4 ${
-                      credentials?.hasPropertyCredential 
-                        ? 'text-green-600 dark:text-green-400' 
+                      }`} />
+
+                    <Building className={`w-4 h-4 ${credentials?.hasPropertyCredential
+                        ? 'text-green-600 dark:text-green-400'
                         : 'text-gray-400 dark:text-gray-500'
-                    }`} />
-                    <span className={`text-sm font-medium ${
-                      credentials?.hasPropertyCredential
+                      }`} />
+                    <span className={`text-sm font-medium ${credentials?.hasPropertyCredential
                         ? 'text-gray-700 dark:text-gray-300'
                         : 'text-gray-400 dark:text-gray-500'
-                    }`}>
+                      }`}>
                       {credentials?.propertyCount || 0}
                     </span>
 
@@ -137,8 +133,8 @@ const MainLayout: React.FC = () => {
                           </div>
                           <div className="flex items-center space-x-2">
                             <Building className="w-3 h-3" />
-                            <span>{credentials?.hasPropertyCredential 
-                              ? `擁有 ${credentials.propertyCount} 個房產憑證` 
+                            <span>{credentials?.hasPropertyCredential
+                              ? `擁有 ${credentials.propertyCount} 個房產憑證`
                               : '房產憑證未驗證'}</span>
                           </div>
                         </div>
@@ -157,7 +153,7 @@ const MainLayout: React.FC = () => {
                   >
                     <span>{formatAddress(publicKey.toString())}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {balanceLoading ? '...' : `${balance.toFixed(2)} USDC`}
+                      {loading ? '...' : `${balance.toFixed(2)} USDC`}
                     </span>
                   </button>
 
@@ -217,7 +213,7 @@ const MainLayout: React.FC = () => {
                   {item.name}
                 </button>
               ))}
-              
+
               {/* Mobile Credentials */}
               {publicKey && (
                 <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700">
@@ -226,21 +222,18 @@ const MainLayout: React.FC = () => {
                       我的憑證
                     </span>
                     <div className="flex items-center space-x-3">
-                      <User className={`w-4 h-4 ${
-                        credentials?.hasCitizenCredential 
-                          ? 'text-blue-600 dark:text-blue-400' 
+                      <User className={`w-4 h-4 ${credentials?.hasCitizenCredential
+                          ? 'text-blue-600 dark:text-blue-400'
                           : 'text-gray-400 dark:text-gray-500'
-                      }`} />
-                      <Building className={`w-4 h-4 ${
-                        credentials?.hasPropertyCredential 
-                          ? 'text-green-600 dark:text-green-400' 
+                        }`} />
+                      <Building className={`w-4 h-4 ${credentials?.hasPropertyCredential
+                          ? 'text-green-600 dark:text-green-400'
                           : 'text-gray-400 dark:text-gray-500'
-                      }`} />
-                      <span className={`text-sm font-medium ${
-                        credentials?.hasPropertyCredential
+                        }`} />
+                      <span className={`text-sm font-medium ${credentials?.hasPropertyCredential
                           ? 'text-gray-700 dark:text-gray-300'
                           : 'text-gray-400 dark:text-gray-500'
-                      }`}>
+                        }`}>
                         {credentials?.propertyCount || 0}
                       </span>
                     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const ListingsPage: React.FC = () => {
   const { credentials } = useAuth();
@@ -19,9 +19,6 @@ export const ListingsPage: React.FC = () => {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
-                憑證驗證成功
-              </h3>
               <p className="mt-1 text-sm text-green-700 dark:text-green-300">
                 您擁有 {credentials?.propertyCount || 0} 個產權憑證，可以發布房源
               </p>

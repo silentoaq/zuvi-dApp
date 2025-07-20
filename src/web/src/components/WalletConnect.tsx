@@ -1,6 +1,6 @@
 import { useState } from 'react'; 
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCredentialRequest } from '@/hooks/useCredentialRequest';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';

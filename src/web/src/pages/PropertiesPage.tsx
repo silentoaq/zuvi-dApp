@@ -1,6 +1,6 @@
 import React from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const PropertiesPage: React.FC = () => {
   const { publicKey } = useWallet();
@@ -12,15 +12,6 @@ export const PropertiesPage: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           房源市場
         </h1>
-        
-        <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            這是公開頁面，任何人都可以瀏覽房源。
-            {!publicKey && ' 連接錢包後可申請租賃。'}
-            {publicKey && !credentials?.hasCitizenCredential && ' 驗證自然人憑證後可申請租賃。'}
-            {publicKey && credentials?.hasCitizenCredential && ' 您已可以申請租賃房源。'}
-          </p>
-        </div>
 
         {/* 模擬房源列表 */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
