@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   Loader2, 
+
   CheckCircle, 
   AlertCircle, 
   Home,
@@ -31,7 +32,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// 表單驗證 schema
 const listingSchema = z.object({
   monthlyRent: z.string().min(1, '請輸入月租金'),
   depositMonths: z.string().min(1, '請輸入押金月數'),
@@ -71,7 +71,6 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [copied, setCopied] = useState(false);
   
-  // 從 publicKey 獲取 userDid
   const userDid = publicKey?.toString() || '';
 
   const {
@@ -83,12 +82,10 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     resolver: zodResolver(listingSchema)
   });
 
-  // 初始化 twattest SDK
   const twattestSDK = new TwattestSDK({
     baseUrl: 'https://twattest.ddns.net/api'
   });
 
-  // 清理函數
   const cleanup = () => {
     if (pollingInterval) {
       clearInterval(pollingInterval);
@@ -102,13 +99,11 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     reset();
   };
 
-  // 關閉 Modal 時清理
   const handleClose = () => {
     cleanup();
     onClose();
   };
 
-  // 複製網址到剪貼板
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(vpRequestUri);
@@ -126,9 +121,13 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
       return;
     }
 
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+
     setLoading(true);
     try {
-      // 請求房產資料揭露
       const dataRequest = await twattestSDK.requestData({
         credentialType: 'PropertyCredential',
         requiredFields: ['address', 'building_area', 'use', 'ownership_type'],
@@ -138,11 +137,9 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
 
       setVpRequestUri(dataRequest.vpRequestUri);
 
-      // 產生 QR Code
       const qrCode = await twattestSDK.generateQRCode(dataRequest.vpRequestUri);
       setQrCodeUrl(qrCode);
 
-      // 開始輪詢檢查授權狀態
       startPolling(dataRequest.requestId);
     } catch (error) {
       console.error('啟動授權流程失敗:', error);
@@ -154,28 +151,54 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
 
   // 輪詢檢查授權狀態
   const startPolling = (requestId: string) => {
+    let attemptCount = 0;
+    const maxAttempts = 100; // 5分鐘 (3秒 * 100 = 300秒)
+    
     const interval = setInterval(async () => {
+      attemptCount++;
+      
+      if (attemptCount > maxAttempts) {
+        clearInterval(interval);
+        setPollingInterval(null);
+        toast.error('請求已過期，請重新開始');
+        return;
+      }
+      
       try {
         const response = await fetch(`https://twattest.ddns.net/api/sdk/data-request/${requestId}`);
+        
+        if (response.status === 404) {
+          clearInterval(interval);
+          setPollingInterval(null);
+          toast.error('請求不存在或已過期');
+          return;
+        }
+        
+        if (!response.ok) {
+          console.error('Polling error:', response.status);
+          return;
+        }
+        
         const result = await response.json();
 
         if (result.status === 'completed' && result.data) {
-          // 授權成功，取得房產資料
           clearInterval(interval);
           setPollingInterval(null);
           setPropertyData(result.data);
           setStep('form');
           toast.success('房產資料授權成功');
         } else if (result.status === 'expired' || result.status === 'rejected') {
-          // 授權失敗或過期
           clearInterval(interval);
           setPollingInterval(null);
           toast.error('授權已過期或被拒絕，請重試');
         }
       } catch (error) {
         console.error('檢查授權狀態失敗:', error);
+        clearInterval(interval);
+        setPollingInterval(null);
+        toast.error('網路錯誤，請重試');
       }
-    }, 3000); // 每3秒檢查一次
+    }, 3000);
 
     setPollingInterval(interval);
   };
@@ -189,33 +212,28 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
 
     setLoading(true);
     try {
-      // 準備房源詳細資料
       const propertyDetails = {
         title: formData.title,
         description: formData.description,
         features: formData.features?.split(',').map((f: string) => f.trim()).filter(Boolean) || [],
-        // 從授權的房產資料中取得
         address: propertyData.fields.address,
         buildingArea: propertyData.fields.building_area,
         propertyUse: propertyData.fields.use,
         ownershipType: propertyData.fields.ownership_type,
-        images: [], // 暫時不處理圖片上傳
+        images: [],
       };
 
-      // 調用 API 準備發布
       const response = await apiService.prepareListProperty({
-        propertyId: propertyData.credentialId, // 使用憑證 ID 作為房產 ID
+        propertyId: propertyData.credentialId,
         ownerDid: userDid,
         ownerAttestation: attestation.address,
-        monthlyRent: parseInt(formData.monthlyRent) * 1000000, // 轉換為 USDC 最小單位
+        monthlyRent: parseInt(formData.monthlyRent) * 1000000,
         depositMonths: parseInt(formData.depositMonths),
         propertyDetails
       });
 
       if (response.success) {
         setStep('confirm');
-        // 這裡可以顯示交易詳情，讓用戶確認
-        // 實際的鏈上交易會在用戶確認後由錢包簽名執行
         toast.success('房源資料準備完成');
       } else {
         throw new Error(response.error || '準備發布失敗');
@@ -230,12 +248,11 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
 
   // 組件掛載時自動開始授權流程
   useEffect(() => {
-    if (isOpen && step === 'qr' && !qrCodeUrl) {
+    if (isOpen && step === 'qr' && !qrCodeUrl && !loading) {
       startAuthorizationFlow();
     }
-  }, [isOpen]);
+  }, [isOpen, step]);
 
-  // 組件卸載時清理
   useEffect(() => {
     return () => {
       if (pollingInterval) {
@@ -244,7 +261,6 @@ export const CreateListingModal: React.FC<CreateListingModalProps> = ({
     };
   }, [pollingInterval]);
 
-  // 渲染步驟指示器
   const renderStepIndicator = () => {
     const steps = [
       { id: 'qr', label: '身份驗證', icon: Shield },

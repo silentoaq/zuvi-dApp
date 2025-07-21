@@ -27,7 +27,7 @@ import { ipfsRoutes } from './routes/ipfs.js';
 import { transactionRoutes } from './routes/transactions.js';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 // 中介軟體
 app.use(cors());
