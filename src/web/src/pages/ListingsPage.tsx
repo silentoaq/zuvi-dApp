@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Key, Hash, FileDigit, Building , Plus, Eye, EyeOff } from 'lucide-react';
+import { CreateListingModal } from '@/components/CreateListingModal';
+import { toast } from 'sonner';
 
 export const ListingsPage: React.FC = () => {
     const { attestationStatus } = useAuth();
     const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
+    const [selectedAttestation, setSelectedAttestation] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const toggleExpand = (fieldId: string) => {
         setExpandedFields(prev => {
@@ -29,6 +33,28 @@ export const ListingsPage: React.FC = () => {
     const truncate = (str: string, length: number = 8) => {
         if (str.length <= length) return str;
         return `${str.slice(0, length)}...${str.slice(-4)}`;
+    };
+
+    const handleCreateListing = (attestation: any) => {
+        // 檢查憑證是否過期
+        const now = Math.floor(Date.now() / 1000);
+        if (attestation.expiry < now) {
+            toast.error('此憑證已過期，請重新申請');
+            return;
+        }
+
+        setSelectedAttestation(attestation);
+        setIsModalOpen(true);
+    };
+
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+        setSelectedAttestation(null);
+    };
+
+    const handleListingSuccess = () => {
+        toast.success('房源發布成功！');
+        // 這裡可以重新載入用戶的房源列表或導航到其他頁面
     };
 
     return (
@@ -71,35 +97,39 @@ export const ListingsPage: React.FC = () => {
                                 }}
                                 className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                             >
+                                {expandedFields.size > 0 ? (
+                                    <>
+                                        <EyeOff className="w-4 h-4" />
+                                        <span>收合全部</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Eye className="w-4 h-4" />
+                                        <span>展開全部</span>
+                                    </>
+                                )}
                             </button>
                         )}
                     </div>
 
                     {attestationStatus?.twland?.attestations && attestationStatus.twland.attestations.length > 0 ? (
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                             {attestationStatus.twland.attestations.map((attestation, index) => (
-                                <div
-                                    key={attestation.address}
-                                    className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-5 hover:shadow-lg transition-all duration-200"
+                                <div 
+                                    key={index} 
+                                    className="group border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-all duration-200 hover:border-blue-400 dark:hover:border-blue-600"
                                 >
-                                    <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm z-10">
-                                        #{index + 1}
-                                    </div>
-
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
                                         <div className="flex items-start space-x-2">
                                             <Key className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Attestation 地址</p>
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">憑證地址</p>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleExpand(`address-${index}`);
-                                                        }}
-                                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
+                                                        onClick={() => toggleExpand(`address-${index}`)}
+                                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                                                     >
-                                                        {expandedFields.has(`address-${index}`) ?
+                                                        {expandedFields.has(`address-${index}`) ? 
                                                             <EyeOff className="w-3 h-3" /> :
                                                             <Eye className="w-3 h-3" />
                                                         }
@@ -108,24 +138,21 @@ export const ListingsPage: React.FC = () => {
                                                 <p className="text-sm font-mono text-gray-900 dark:text-white break-all">
                                                     {expandedFields.has(`address-${index}`)
                                                         ? attestation.address
-                                                        : truncate(attestation.address, 12)}
+                                                        : truncate(attestation.address)}
                                                 </p>
                                             </div>
                                         </div>
 
                                         <div className="flex items-start space-x-2">
-                                            <Hash className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2">
+                                            <Hash className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between">
                                                     <p className="text-xs text-gray-500 dark:text-gray-400">Merkle Root</p>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleExpand(`merkle-${index}`);
-                                                        }}
-                                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
+                                                        onClick={() => toggleExpand(`merkle-${index}`)}
+                                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                                                     >
-                                                        {expandedFields.has(`merkle-${index}`) ?
+                                                        {expandedFields.has(`merkle-${index}`) ? 
                                                             <EyeOff className="w-3 h-3" /> :
                                                             <Eye className="w-3 h-3" />
                                                         }
@@ -134,24 +161,21 @@ export const ListingsPage: React.FC = () => {
                                                 <p className="text-sm font-mono text-gray-900 dark:text-white break-all">
                                                     {expandedFields.has(`merkle-${index}`)
                                                         ? attestation.data.merkleRoot
-                                                        : truncate(attestation.data.merkleRoot, 12)}
+                                                        : truncate(attestation.data.merkleRoot)}
                                                 </p>
                                             </div>
                                         </div>
 
                                         <div className="flex items-start space-x-2">
-                                            <FileDigit className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2">
+                                            <FileDigit className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between">
                                                     <p className="text-xs text-gray-500 dark:text-gray-400">憑證參考</p>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleExpand(`ref-${index}`);
-                                                        }}
-                                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
+                                                        onClick={() => toggleExpand(`ref-${index}`)}
+                                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                                                     >
-                                                        {expandedFields.has(`ref-${index}`) ?
+                                                        {expandedFields.has(`ref-${index}`) ? 
                                                             <EyeOff className="w-3 h-3" /> :
                                                             <Eye className="w-3 h-3" />
                                                         }
@@ -176,7 +200,7 @@ export const ListingsPage: React.FC = () => {
                                         </div>
 
                                         <button
-                                            onClick={() => console.log('Selected attestation:', attestation)}
+                                            onClick={() => handleCreateListing(attestation)}
                                             className="w-full mt-4 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors group-hover:shadow-md"
                                         >
                                             <Plus className="w-4 h-4" />
@@ -211,6 +235,16 @@ export const ListingsPage: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* 發布房源 Modal */}
+            {selectedAttestation && (
+                <CreateListingModal
+                    isOpen={isModalOpen}
+                    onClose={handleModalClose}
+                    attestation={selectedAttestation}
+                    onSuccess={handleListingSuccess}
+                />
+            )}
         </div>
     );
 };
